@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Aspose.Foundation/Aspose.Foundation/Aspose.Foundation.iml" filepath="$PROJECT_DIR$/Aspose.Foundation/Aspose.Foundation/Aspose.Foundation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Aspose.Foundation/Aspose.Foundation.Tests/Aspose.Foundation.Tests.iml" filepath="$PROJECT_DIR$/Aspose.Foundation/Aspose.Foundation.Tests/Aspose.Foundation.Tests.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Aspose.Foundation/Aspose.TestFx/Aspose.TestFx.iml" filepath="$PROJECT_DIR$/Aspose.Foundation/Aspose.TestFx/Aspose.TestFx.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Aspose.Words/Aspose.Words.iml" filepath="$PROJECT_DIR$/Aspose.Words/Aspose.Words.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Aspose.Words.TestFx/Aspose.Words.TestFx.iml" filepath="$PROJECT_DIR$/Aspose.Words.TestFx/Aspose.Words.TestFx.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Aspose.Words.Tests/Aspose.Words.Tests.iml" filepath="$PROJECT_DIR$/Aspose.Words.Tests/Aspose.Words.Tests.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ms/MS.iml" filepath="$PROJECT_DIR$/ms/MS.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ms/Tests/MS.Tests.iml" filepath="$PROJECT_DIR$/ms/Tests/MS.Tests.iml" />
+    </modules>
+  </component>
+</project>

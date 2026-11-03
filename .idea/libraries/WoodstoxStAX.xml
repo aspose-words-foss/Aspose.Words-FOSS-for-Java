@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="WoodstoxStAX">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/stax2-api-4.2.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/ms/lib/woodstox-core-6.5.2-aspose.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

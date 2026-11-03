@@ -1,0 +1,734 @@
+// Copyright (c) 2001-2020 Aspose Pty Ltd. All Rights Reserved.
+// 13/08/2017 by Dmitry Khudobin
+
+package com.aspose.words;
+
+// ********* THIS FILE IS AUTO PORTED *********
+
+import com.aspose.DrBrush;
+import com.aspose.Dr3DVector;
+import com.aspose.Dr3DFigure;
+<<<<<<< working copy
+import com.aspose.DrPen;
+import com.aspose.DrBrushType;
+import com.aspose.DrColorUtil;
+import com.aspose.DrSolidBrush;
+import com.aspose.Dr3DPoint;
+import com.aspose.DrColor;
+import com.aspose.DrHatchBrush;
+import com.aspose.DrTextureBrush;
+import com.aspose.DrLinearGradientBrush;
+import com.aspose.PathDrGradientBrush;
+import com.aspose.BitmapPal;
+import com.aspose.GraphicsPal;
+import com.aspose.DrMatrix;
+import com.aspose.ms.System.Drawing.RectangleF;
+import com.aspose.ms.System.Drawing.Drawing2D.MatrixOrder;
+import com.aspose.ms.System.Drawing.Rectangle;
+import com.aspose.ms.System.Drawing.Drawing2D.WrapMode;
+import com.aspose.BrushPal;
+import com.aspose.ApsBoundingBoxCalculator;
+import com.aspose.ConvertUtilCore;
+import com.aspose.ms.System.Drawing.msSize;
+import com.aspose.BitmapDataPal;
+
+
+/// <summary>
+/// Renders faces and path of shape. Sets material and fill color.
+/// </summary>
+class OpenGLFacesRenderer
+{
+    /// <summary>
+    /// Constructor for OpenGLFacesRenderer class.
+    /// </summary>
+    /// <param name="maxX">Maximum value for the X axis.</param>
+    /// <param name="maxY">Maximum value for the Y axis.</param>
+    /// <param name="dmlPathShadeType">Specifies the shape to follow for a path gradient shade.</param>
+    /// <param name="openGLShapeMaterialBuilder">Calculating material for shape in 3d scene and setting his.</param>
+    OpenGLFacesRenderer(
+        float maxX,
+        float maxY,
+        /*DmlPathShadeType*/int dmlPathShadeType,
+        IOpenGLShapeMaterialBuilder openGLShapeMaterialBuilder)
+    {
+        mMaxX = maxX;
+        mMaxY = maxY;
+        mDmlPathShadeType = dmlPathShadeType;
+        mShapeMaterialBuilder = openGLShapeMaterialBuilder;
+    }
+
+    void renderFill(DrBrush brush, Dr3DVector normal, Dr3DFigure figure, float offsetZ) throws Exception
+    {
+        renderFill(brush, normal, figure, offsetZ, null, null);
+    }
+
+    void renderFill(
+        DrBrush brush,
+        Dr3DVector normal,
+        Dr3DFigure figure,
+        float offsetZ,
+        Dr3DVector normalPrevios,
+        Dr3DVector normalNext) throws Exception
+    {
+        renderFill(brush, normal, figure, offsetZ, normalPrevios, normalNext, false);
+    }
+
+    void renderFillForBevel(
+        DrBrush brush,
+        Dr3DVector normal,
+        Dr3DFigure figure,
+        Dr3DVector normalPrevios,
+        Dr3DVector normalNext) throws Exception
+    {
+        renderFill(brush, normal, figure, 0.0f, normalPrevios, normalNext, true);
+    }
+
+    void renderPath(DrPen pen, Dr3DVector normal, Dr3DFigure figure, float offsetZ)
+    {
+        if (pen == null || figure.getCount() == 0)
+            return;
+
+        GL.LineWidth(pen.getWidth() / PEN_WIDTH_SCALING_FACTOR);
+
+        if (pen.getBrush() != null && pen.getBrush().getBrushType() == DrBrushType.SOLID)
+        {
+            // Color conversion, sequence is important.
+            float[] faceColor = DrColorUtil.getBgraVector(((DrSolidBrush)pen.getBrush()).getColor());
+            GL.Color4(faceColor);
+        }
+
+        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+        GL.Begin(figure.isClosed() ? PrimitiveType.LineLoop : PrimitiveType.LineStrip);
+        GL.Normal3((float)normal.getX(), (float)normal.getY(), (float)normal.getZ());
+        for (int i = 0; i < figure.getCount(); i++)
+        {
+            Dr3DPoint point = figure.get(i);
+            GL.Vertex3((float)point.getX(), (float)point.getY(), (float)point.getZ() + offsetZ);
+        }
+
+        GL.End();
+    }
+
+    void deleteTexture()
+    {
+        if (mTextureId != 0)
+            GL.DeleteTexture(mTextureId);
+
+        GL.Disable(EnableCap.Texture2D);
+    }
+
+    private void renderFill(
+        DrBrush brush,
+        Dr3DVector normal,
+        Dr3DFigure figure,
+        float offsetZ,
+        Dr3DVector normalPrevios,
+        Dr3DVector normalNext,
+        boolean isBevel) throws Exception
+    {
+        if (brush == null || figure.getCount() == 0)
+            return;
+
+        DrColor fillColor = preparingFaceFill(brush);
+        mShapeMaterialBuilder.setMaterial(fillColor);
+
+        GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+        GL.Begin(PrimitiveType.TriangleFan);
+
+        if (normalPrevios == null && normalNext == null)
+            GL.Normal3((float)normal.getX(), (float)normal.getY(), (float)normal.getZ());
+
+        for (int i = 0; i < figure.getCount(); i++)
+        {
+            Dr3DPoint point = figure.get(i);
+
+            // If we have Previos and Naxt normal, then recalculate normals for points of the current face.
+            if (normalPrevios != null && normalNext != null)
+            {
+                // The first two points border with the previous face.
+                if (i == 0 || (!isBevel && i == 1) || (isBevel && i == 3))
+                {
+                    Dr3DVector newNormal = normalPrevios.add(normal);
+                    newNormal.normalize();
+                    GL.Normal3((float)newNormal.getX(), (float)newNormal.getY(), (float)newNormal.getZ());
+                }
+
+                // The last two points border with the next face.
+                if (i == 2 || (!isBevel && i == 3) || (isBevel && i == 1))
+                {
+                    Dr3DVector newNormal = normal.add(normalNext);
+                    newNormal.normalize();
+                    GL.Normal3((float)newNormal.getX(), (float)newNormal.getY(), (float)newNormal.getZ());
+                }
+            }
+
+            if (mTextureId != 0)
+                GL.TexCoord2((float)(point.getX() / mMaxX) * mRepeatTextureX, (float)(point.getY() / mMaxY) * mRepeatTextureY);
+
+            GL.Vertex3((float)point.getX(), (float)point.getY(), (float)point.getZ() + offsetZ);
+        }
+
+        GL.End();
+    }
+
+    /// <summary>
+    /// Specifies the color of the material for the shape. 
+    /// It prepares the texture for OpenGL if on the input of the DrTextureBrush or DrHatchBrush or DrLinearGradient.
+    /// </summary>
+    private DrColor preparingFaceFill(DrBrush brush) throws Exception
+    {
+        if ((brush.getBrushType() == DrBrushType.TEXTURE
+            || brush.getBrushType() == DrBrushType.HATCH
+            || brush.getBrushType() == DrBrushType.LINEAR_GRADIENT
+            || brush.getBrushType() == DrBrushType.PATH_GRADIENT)
+            && mTextureId == 0)
+        {
+            GL.Disable(EnableCap.Blend);
+            GL.Enable(EnableCap.Texture2D);
+
+            mTextureId = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, mTextureId);
+            int textureWrapMode = (int)TextureWrapMode.Clamp;
+            switch (brush.getBrushType())
+            {
+                case DrBrushType.HATCH:
+                    textureWrapMode = loadTexture((DrHatchBrush)brush);
+                    break;
+
+                case DrBrushType.TEXTURE:
+                    textureWrapMode = loadTexture((DrTextureBrush)brush);
+                    break;
+
+                case DrBrushType.LINEAR_GRADIENT:
+                    textureWrapMode = loadTexture((DrLinearGradientBrush)brush);
+                    break;
+
+                case DrBrushType.PATH_GRADIENT:
+                    textureWrapMode = loadTexture((PathDrGradientBrush)brush);
+                    break;
+            }
+
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, textureWrapMode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, textureWrapMode);
+        }
+
+        if (brush.getBrushType() == DrBrushType.SOLID)
+            return ((DrSolidBrush)brush).getColor();
+
+        return DrColor.WHITE;
+    }
+
+    private int loadTexture(DrLinearGradientBrush drLinearGradientBrush) throws Exception
+    {
+        BitmapPal bitmap = new BitmapPal(BITMAP_WIDTH, BITMAP_HEIGHT);
+        try /*JAVA: was using*/
+        {
+            GraphicsPal graphics = new GraphicsPal(bitmap);
+            try /*JAVA: was using*/
+            {
+                DrMatrix brushRectTransform =
+                DrMatrix.createStretchMatrix(drLinearGradientBrush.getRectangle(),
+                new RectangleF(0f, 0f, BITMAP_WIDTH, BITMAP_HEIGHT));
+
+                brushRectTransform.multiply(drLinearGradientBrush.getTransform(), MatrixOrder.PREPEND);
+                drLinearGradientBrush.setTransform(brushRectTransform);
+                graphics.fillRectangle(drLinearGradientBrush, RectangleF.fromRectangle(new Rectangle(0, 0, bitmap.getWidth(), bitmap.getHeight())));
+            }
+            finally { if (graphics != null) graphics.dispose(); }
+
+            return loadTextureIntoMemory(bitmap, WrapMode.CLAMP);
+        }
+        finally { if (bitmap != null) bitmap.dispose(); }
+    }
+
+    private int loadTexture(PathDrGradientBrush pathDrGradientBrush) throws Exception
+    {
+        if (mDmlPathShadeType != DmlPathShadeType.CIRCLE)
+        {
+            DrTextureBrush drTextureBrush = BrushPal.createTextureBrush(pathDrGradientBrush);
+            drTextureBrush.setWrapMode(WrapMode.CLAMP);
+            return loadTexture(drTextureBrush);
+        }
+
+        // Constants -30 and 185 was chosen empirically.
+        ApsBoundingBoxCalculator boxCalculator = new ApsBoundingBoxCalculator();
+        RectangleF pathBrushRect = boxCalculator.calculate(pathDrGradientBrush.getPath());
+
+        DrMatrix brushRectTransform =
+        DrMatrix.createStretchMatrix(pathBrushRect, new RectangleF(-30, -30, 185f, 185f));
+
+        brushRectTransform.multiply(pathDrGradientBrush.getTransform(), MatrixOrder.PREPEND);
+
+        pathDrGradientBrush.setTransform(brushRectTransform);
+
+        BitmapPal bitmap = new BitmapPal(BITMAP_WIDTH, BITMAP_HEIGHT);
+        try /*JAVA: was using*/
+        {
+            GraphicsPal graphics = new GraphicsPal(bitmap);
+            try /*JAVA: was using*/
+            {
+                graphics.fillRectangle(pathDrGradientBrush, RectangleF.fromRectangle(new Rectangle(0, 0, bitmap.getWidth(), bitmap.getHeight())));
+            }
+            finally { if (graphics != null) graphics.dispose(); }
+
+            return loadTextureIntoMemory(bitmap, WrapMode.CLAMP);
+        }
+        finally { if (bitmap != null) bitmap.dispose(); }
+    }
+
+    private int loadTexture(DrTextureBrush brush) throws Exception
+    {
+        BitmapPal bmp = new BitmapPal(brush);
+        try /*JAVA: was using*/
+    	{
+            return loadTextureIntoMemory(bmp, brush.getWrapMode());
+    	}
+        finally { if (bmp != null) bmp.dispose(); }
+    }
+
+    private int loadTexture(DrHatchBrush brush) throws Exception
+    {
+        BitmapPal bitmap = new BitmapPal(BITMAP_WIDTH, BITMAP_HEIGHT);
+        try /*JAVA: was using*/
+        {
+            GraphicsPal graphics = new GraphicsPal(bitmap);
+            try /*JAVA: was using*/
+            {
+                DrHatchBrush hatchBrush = new DrHatchBrush(brush.getHatchStyle(), brush.getForegroundColor(),
+                brush.getBackgroundColor());
+
+                graphics.fillRectangle(hatchBrush, RectangleF.fromRectangle(new Rectangle(0, 0, bitmap.getWidth(), bitmap.getHeight())));
+            }
+            finally { if (graphics != null) graphics.dispose(); }
+
+            return loadTextureIntoMemory(bitmap, WrapMode.TILE);
+        }
+        finally { if (bitmap != null) bitmap.dispose(); }
+    }
+
+    private int loadTextureIntoMemory(BitmapPal bitmap, /*WrapMode*/int wrapMode)
+    {
+        int textureWrapMode = (int)TextureWrapMode.Clamp;
+        // TileFlip modes are not supported at the moment.
+        if (wrapMode != WrapMode.CLAMP)
+        {
+            textureWrapMode = (int)TextureWrapMode.Repeat;
+            double maxXPoint = ConvertUtilCore.emuToPoint(mMaxX);
+            double maxYPoint = ConvertUtilCore.emuToPoint(mMaxY);
+            mRepeatTextureX = (float)ConvertUtilCore.pointToPixelInt(maxXPoint, bitmap.getHorizontalResolution()) / bitmap.getWidth();
+            mRepeatTextureY = (float)ConvertUtilCore.pointToPixelInt(maxYPoint, bitmap.getVerticalResolution()) / bitmap.getHeight();
+        }
+
+        /*Size*/long newSize = resizeImage(bitmap.getWidth(), bitmap.getHeight());
+
+        if (msSize.getWidth(newSize) == bitmap.getWidth() && msSize.getHeight(newSize) == bitmap.getHeight())
+            glLoadTextureIntoMemeory(bitmap);
+        else
+            BitmapPal resizeBmp = new BitmapPal(bitmap.getNativeBitmap(), newSize);
+            try /*JAVA: was using*/
+            {
+                glLoadTextureIntoMemeory(resizeBmp);
+            }
+            finally { if (resizeBmp != null) resizeBmp.dispose(); }
+
+        return textureWrapMode;
+    }
+
+    private void glLoadTextureIntoMemeory(BitmapPal bitmap)
+    {
+        BitmapDataPal bmpData = bitmap.lockBits();
+
+        GL.TexImage2D(
+            TextureTarget.Texture2D,
+            0,
+            PixelInternalFormat.Rgba,
+            bitmap.getWidth(),
+            bitmap.getHeight(),
+            0,
+            PixelFormat.Rgba,
+            PixelType.UnsignedByte,
+            bmpData.getArgbData());
+
+        bmpData.unlockBits();
+    }
+
+    private /*Size*/long resizeImage(int width, int height)
+    {
+        int maxTextureSize = GL.GetInteger(GetPName.MaxTextureSize);
+        int maxWidth = MathHelper.NextPowerOfTwo(width);
+        int maxHeight = MathHelper.NextPowerOfTwo(height);
+=======
+import com.aspose.DrColor;
+import opentk.graphics.opengl.GL;
+import opentk.graphics.opengl.MaterialFace;
+import opentk.graphics.opengl.PolygonMode;
+import opentk.graphics.opengl.PrimitiveType;
+import com.aspose.Dr3DPoint;
+import com.aspose.DrPen;
+import com.aspose.DrBrushType;
+import com.aspose.DrColorUtil;
+import com.aspose.DrSolidBrush;
+import opentk.graphics.opengl.EnableCap;
+import opentk.graphics.opengl.TextureTarget;
+import opentk.graphics.opengl.TextureWrapMode;
+import com.aspose.DrHatchBrush;
+import com.aspose.DrTextureBrush;
+import com.aspose.DrLinearGradientBrush;
+import com.aspose.PathDrGradientBrush;
+import opentk.graphics.opengl.TextureParameterName;
+import opentk.graphics.opengl.TextureMinFilter;
+import opentk.graphics.opengl.TextureMagFilter;
+import com.aspose.BitmapPal;
+import com.aspose.GraphicsPal;
+import com.aspose.DrMatrix;
+import com.aspose.ms.System.Drawing.RectangleF;
+import com.aspose.ms.System.Drawing.Drawing2D.MatrixOrder;
+import com.aspose.ms.System.Drawing.Rectangle;
+import com.aspose.ms.System.Drawing.Drawing2D.WrapMode;
+import com.aspose.BrushPal;
+import com.aspose.ApsBoundingBoxCalculator;
+import com.aspose.ConvertUtilCore;
+import com.aspose.ms.System.Drawing.msSize;
+import com.aspose.BitmapDataPal;
+import opentk.graphics.opengl.PixelInternalFormat;
+import opentk.graphics.opengl.PixelFormat;
+import opentk.graphics.opengl.PixelType;
+import opentk.graphics.opengl.GetPName;
+import opentk.MathHelper;
+
+
+/// <summary>
+/// Renders faces and path of shape. Sets material and fill color.
+/// </summary>
+class OpenGLFacesRenderer
+{
+    /// <summary>
+    /// Constructor for OpenGLFacesRenderer class.
+    /// </summary>
+    /// <param name="maxX">Maximum value for the X axis.</param>
+    /// <param name="maxY">Maximum value for the Y axis.</param>
+    /// <param name="dmlPathShadeType">Specifies the shape to follow for a path gradient shade.</param>
+    /// <param name="openGLShapeMaterialBuilder">Calculating material for shape in 3d scene and setting his.</param>
+    OpenGLFacesRenderer(
+        float maxX,
+        float maxY,
+        /*DmlPathShadeType*/int dmlPathShadeType,
+        IOpenGLShapeMaterialBuilder openGLShapeMaterialBuilder)
+    {
+        mMaxX = maxX;
+        mMaxY = maxY;
+        mDmlPathShadeType = dmlPathShadeType;
+        mShapeMaterialBuilder = openGLShapeMaterialBuilder;
+    }
+
+    void renderFill(DrBrush brush, Dr3DVector normal, Dr3DFigure figure, float offsetZ) throws Exception
+    {
+        renderFill(brush, normal, figure, offsetZ, null, null);
+    }
+
+    void renderFill(
+        DrBrush brush,
+        Dr3DVector normal,
+        Dr3DFigure figure,
+        float offsetZ,
+        Dr3DVector normalPrevios,
+        Dr3DVector normalNext) throws Exception
+    {
+        if (brush == null || figure.getCount() == 0)
+            return;
+
+        DrColor fillColor = preparingFaceFill(brush);
+        mShapeMaterialBuilder.setMaterial(fillColor);
+
+        GL.polygonMode(MaterialFace.FRONT_AND_BACK, PolygonMode.FILL);
+        GL.begin(PrimitiveType.TRIANGLE_FAN);
+
+        if (normalPrevios == null && normalNext == null)
+            GL.normal3((float)normal.getX(), (float)normal.getY(), (float)normal.getZ());
+
+        for (int i = 0; i < figure.getCount(); i++)
+        {
+            Dr3DPoint point = figure.get(i);
+
+            // If we have Previos and Naxt normal, then recalculate normals for points of the current face.
+            if (normalPrevios != null && normalNext != null)
+            {
+                // The first two points border with the previous face.
+                if (i == 0 || i == 1)
+                {
+                    Dr3DVector newNormal = normalPrevios.add(normal);
+                    newNormal.normalize();
+                    GL.normal3((float)newNormal.getX(), (float)newNormal.getY(), (float)newNormal.getZ());
+                }
+
+                // The last two points border with the next face.
+                if (i == 2 || i == 3)
+                {
+                    Dr3DVector newNormal = normal.add(normalNext);
+                    newNormal.normalize();
+                    GL.normal3((float)newNormal.getX(), (float)newNormal.getY(), (float)newNormal.getZ());
+                }
+            }
+
+            if (mTextureId != 0)
+                GL.texCoord2((float)(point.getX() / mMaxX) * mRepeatTextureX, (float)(point.getY() / mMaxY) * mRepeatTextureY);
+
+            GL.vertex3((float)point.getX(), (float)point.getY(), (float)point.getZ() + offsetZ);
+        }
+
+        GL.end();
+    }
+
+    void renderPath(DrPen pen, Dr3DVector normal, Dr3DFigure figure, float offsetZ)
+    {
+        if (pen == null || figure.getCount() == 0)
+            return;
+
+        GL.lineWidth(pen.getWidth() / PEN_WIDTH_SCALING_FACTOR);
+
+        if (pen.getBrush() != null && pen.getBrush().getBrushType() == DrBrushType.SOLID)
+        {
+            // Color conversion, sequence is important.
+            float[] faceColor = DrColorUtil.getBgraVector(((DrSolidBrush)pen.getBrush()).getColor());
+            GL.color4(faceColor);
+        }
+
+        GL.polygonMode(MaterialFace.FRONT_AND_BACK, PolygonMode.FILL);
+        GL.begin(figure.isClosed() ? PrimitiveType.LINE_LOOP : PrimitiveType.LINE_STRIP);
+        GL.normal3((float)normal.getX(), (float)normal.getY(), (float)normal.getZ());
+        for (int i = 0; i < figure.getCount(); i++)
+            GL.vertex3((float)figure.get(i).getX(), (float)figure.get(i).getY(), (float)figure.get(i).getZ() + offsetZ);
+
+        GL.end();
+    }
+
+    void deleteTexture()
+    {
+        if (mTextureId != 0)
+            GL.deleteTexture(mTextureId);
+
+        GL.disable(EnableCap.TEXTURE_2_D);
+    }
+
+    /// <summary>
+    /// Specifies the color of the material for the shape. 
+    /// It prepares the texture for OpenGL if on the input of the DrTextureBrush or DrHatchBrush or DrLinearGradient.
+    /// </summary>
+    private DrColor preparingFaceFill(DrBrush brush) throws Exception
+    {
+        if ((brush.getBrushType() == DrBrushType.TEXTURE
+            || brush.getBrushType() == DrBrushType.HATCH
+            || brush.getBrushType() == DrBrushType.LINEAR_GRADIENT
+            || brush.getBrushType() == DrBrushType.PATH_GRADIENT)
+            && mTextureId == 0)
+        {
+            GL.disable(EnableCap.BLEND);
+            GL.enable(EnableCap.TEXTURE_2_D);
+
+            mTextureId = GL.genTexture();
+            GL.bindTexture(TextureTarget.TEXTURE_2_D, mTextureId);
+            int textureWrapMode = (int)TextureWrapMode.CLAMP;
+            switch (brush.getBrushType())
+            {
+                case DrBrushType.HATCH:
+                    textureWrapMode = loadTexture((DrHatchBrush)brush);
+                    break;
+
+                case DrBrushType.TEXTURE:
+                    textureWrapMode = loadTexture((DrTextureBrush)brush);
+                    break;
+
+                case DrBrushType.LINEAR_GRADIENT:
+                    textureWrapMode = loadTexture((DrLinearGradientBrush)brush);
+                    break;
+
+                case DrBrushType.PATH_GRADIENT:
+                    textureWrapMode = loadTexture((PathDrGradientBrush)brush);
+                    break;
+            }
+
+            GL.texParameter(TextureTarget.TEXTURE_2_D, TextureParameterName.TEXTURE_MIN_FILTER, (int)TextureMinFilter.NEAREST);
+            GL.texParameter(TextureTarget.TEXTURE_2_D, TextureParameterName.TEXTURE_MAG_FILTER, (int)TextureMagFilter.NEAREST);
+            GL.texParameter(TextureTarget.TEXTURE_2_D, TextureParameterName.TEXTURE_WRAP_S, textureWrapMode);
+            GL.texParameter(TextureTarget.TEXTURE_2_D, TextureParameterName.TEXTURE_WRAP_T, textureWrapMode);
+        }
+
+        if (brush.getBrushType() == DrBrushType.SOLID)
+            return ((DrSolidBrush)brush).getColor();
+
+        return DrColor.WHITE;
+    }
+
+    private int loadTexture(DrLinearGradientBrush drLinearGradientBrush) throws Exception
+    {
+        BitmapPal bitmap = new BitmapPal(BITMAP_WIDTH, BITMAP_HEIGHT);
+        try /*JAVA: was using*/
+        {
+            GraphicsPal graphics = new GraphicsPal(bitmap);
+            try /*JAVA: was using*/
+            {
+                DrMatrix brushRectTransform =
+                DrMatrix.createStretchMatrix(drLinearGradientBrush.getRectangle(),
+                new RectangleF(0f, 0f, BITMAP_WIDTH, BITMAP_HEIGHT));
+
+                brushRectTransform.multiply(drLinearGradientBrush.getTransform(), MatrixOrder.PREPEND);
+                drLinearGradientBrush.setTransform(brushRectTransform);
+                graphics.fillRectangle(drLinearGradientBrush, RectangleF.fromRectangle(new Rectangle(0, 0, bitmap.getWidth(), bitmap.getHeight())));
+            }
+            finally { if (graphics != null) graphics.dispose(); }
+
+            return loadTextureIntoMemory(bitmap, WrapMode.CLAMP);
+        }
+        finally { if (bitmap != null) bitmap.dispose(); }
+    }
+
+    private int loadTexture(PathDrGradientBrush pathDrGradientBrush) throws Exception
+    {
+        if (mDmlPathShadeType != DmlPathShadeType.CIRCLE)
+        {
+            DrTextureBrush drTextureBrush = BrushPal.createTextureBrush(pathDrGradientBrush);
+            drTextureBrush.setWrapMode(WrapMode.CLAMP);
+            return loadTexture(drTextureBrush);
+        }
+
+        // Constants -30 and 185 was chosen empirically.
+        ApsBoundingBoxCalculator boxCalculator = new ApsBoundingBoxCalculator();
+        RectangleF pathBrushRect = boxCalculator.calculate(pathDrGradientBrush.getPath());
+
+        DrMatrix brushRectTransform =
+        DrMatrix.createStretchMatrix(pathBrushRect, new RectangleF(-30, -30, 185f, 185f));
+
+        brushRectTransform.multiply(pathDrGradientBrush.getTransform(), MatrixOrder.PREPEND);
+
+        pathDrGradientBrush.setTransform(brushRectTransform);
+
+        BitmapPal bitmap = new BitmapPal(BITMAP_WIDTH, BITMAP_HEIGHT);
+        try /*JAVA: was using*/
+        {
+            GraphicsPal graphics = new GraphicsPal(bitmap);
+            try /*JAVA: was using*/
+            {
+                graphics.fillRectangle(pathDrGradientBrush, RectangleF.fromRectangle(new Rectangle(0, 0, bitmap.getWidth(), bitmap.getHeight())));
+            }
+            finally { if (graphics != null) graphics.dispose(); }
+
+            return loadTextureIntoMemory(bitmap, WrapMode.CLAMP);
+        }
+        finally { if (bitmap != null) bitmap.dispose(); }
+    }
+
+    private int loadTexture(DrTextureBrush brush) throws Exception
+    {
+        BitmapPal bmp = new BitmapPal(brush);
+        try /*JAVA: was using*/
+    	{
+            return loadTextureIntoMemory(bmp, brush.getWrapMode());
+    	}
+        finally { if (bmp != null) bmp.dispose(); }
+    }
+
+    private int loadTexture(DrHatchBrush brush) throws Exception
+    {
+        BitmapPal bitmap = new BitmapPal(BITMAP_WIDTH, BITMAP_HEIGHT);
+        try /*JAVA: was using*/
+        {
+            GraphicsPal graphics = new GraphicsPal(bitmap);
+            try /*JAVA: was using*/
+            {
+                DrHatchBrush hatchBrush = new DrHatchBrush(brush.getHatchStyle(), brush.getForegroundColor(),
+                brush.getBackgroundColor());
+
+                graphics.fillRectangle(hatchBrush, RectangleF.fromRectangle(new Rectangle(0, 0, bitmap.getWidth(), bitmap.getHeight())));
+            }
+            finally { if (graphics != null) graphics.dispose(); }
+
+            return loadTextureIntoMemory(bitmap, WrapMode.TILE);
+        }
+        finally { if (bitmap != null) bitmap.dispose(); }
+    }
+
+    private int loadTextureIntoMemory(BitmapPal bitmap, /*WrapMode*/int wrapMode)
+    {
+        int textureWrapMode = (int)TextureWrapMode.CLAMP;
+        // TileFlip modes are not supported at the moment.
+        if (wrapMode != WrapMode.CLAMP)
+        {
+            textureWrapMode = (int)TextureWrapMode.REPEAT;
+            double maxXPoint = ConvertUtilCore.emuToPoint(mMaxX);
+            double maxYPoint = ConvertUtilCore.emuToPoint(mMaxY);
+            mRepeatTextureX = (float)ConvertUtilCore.pointToPixelInt(maxXPoint, bitmap.getHorizontalResolution()) / bitmap.getWidth();
+            mRepeatTextureY = (float)ConvertUtilCore.pointToPixelInt(maxYPoint, bitmap.getVerticalResolution()) / bitmap.getHeight();
+        }
+
+        /*Size*/long newSize = resizeImage(bitmap.getWidth(), bitmap.getHeight());
+
+        if (msSize.getWidth(newSize) == bitmap.getWidth() && msSize.getHeight(newSize) == bitmap.getHeight())
+        {
+            glLoadTextureIntoMemeory(bitmap);
+        }
+        else
+        {
+            BitmapPal resizeBmp = new BitmapPal(bitmap.getNativeBitmap(), newSize);
+            try /*JAVA: was using*/
+            {
+                glLoadTextureIntoMemeory(resizeBmp);
+            }
+            finally { if (resizeBmp != null) resizeBmp.dispose(); }
+        }
+
+        return textureWrapMode;
+    }
+
+    private void glLoadTextureIntoMemeory(BitmapPal bitmap)
+    {
+        BitmapDataPal bmpData = bitmap.lockBits();
+
+        GL.texImage2D(
+            TextureTarget.TEXTURE_2_D,
+            0,
+            PixelInternalFormat.RGBA,
+            bitmap.getWidth(),
+            bitmap.getHeight(),
+            0,
+            PixelFormat.RGBA,
+            PixelType.UNSIGNED_BYTE,
+            bmpData.getArgbData());
+
+        bmpData.unlockBits();
+    }
+
+    private /*Size*/long resizeImage(int width, int height)
+    {
+        int maxTextureSize = GL.getInteger(GetPName.MAX_TEXTURE_SIZE);
+        int maxWidth = MathHelper.nextPowerOfTwo(width);
+        int maxHeight = MathHelper.nextPowerOfTwo(height);
+>>>>>>> merge rev
+
+        while (maxWidth > maxTextureSize)
+            maxWidth >>= 1;
+
+        while (maxHeight > maxTextureSize)
+            maxHeight >>= 1;
+
+        return msSize.ctor(maxWidth, maxHeight);
+    }
+
+    private /*final*/ float mMaxX;
+    private /*final*/ float mMaxY;
+    private /*final*/ /*DmlPathShadeType*/int mDmlPathShadeType;
+    private /*final*/ IOpenGLShapeMaterialBuilder mShapeMaterialBuilder;
+    private int mTextureId;
+    private float mRepeatTextureX = 1.0f;
+    private float mRepeatTextureY = 1.0f;
+
+    // Constant 128 was chosen empirically.
+    private static final int BITMAP_WIDTH = 128;
+    private static final int BITMAP_HEIGHT = 128;
+
+    // It's necessary to calculate the thickness of a path correctly.
+    // Constant 4350.0f  was chosen empirically.
+    private static final float PEN_WIDTH_SCALING_FACTOR = 4350.0f;
+}
+

@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="TestNG">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/testng-6.8.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jcommander-1.27.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/snakeyaml-1.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

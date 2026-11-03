@@ -1,0 +1,231 @@
+diff --git a/org/bouncycastle/asn1/BERSetParser.java b/org/bouncycastle/asn1/BERSetParser.java
+index 6309769..3473949 100644
+--- a/org/bouncycastle/asn1/BERSetParser.java
++++ b/org/bouncycastle/asn1/BERSetParser.java
+@@ -58,4 +58,4 @@ public class BERSetParser
+             throw new ASN1ParsingException(e.getMessage(), e);
+         }
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/org/bouncycastle/asn1/BERTaggedObjectParser.java b/org/bouncycastle/asn1/BERTaggedObjectParser.java
+index b7d1888..fbcae4d 100644
+--- a/org/bouncycastle/asn1/BERTaggedObjectParser.java
++++ b/org/bouncycastle/asn1/BERTaggedObjectParser.java
+@@ -98,4 +98,4 @@ public class BERTaggedObjectParser
+             throw new ASN1ParsingException(e.getMessage());
+         }
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/org/bouncycastle/asn1/ConstructedOctetStream.java b/org/bouncycastle/asn1/ConstructedOctetStream.java
+index 973078a..9aac472 100644
+--- a/org/bouncycastle/asn1/ConstructedOctetStream.java
++++ b/org/bouncycastle/asn1/ConstructedOctetStream.java
+@@ -29,14 +29,15 @@ class ConstructedOctetStream
+                 return -1;
+             }
+ 
+-            ASN1OctetStringParser next = getNextParser();
+-            if (next == null)
++            ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
++
++            if (s == null)
+             {
+                 return -1;
+             }
+ 
+             _first = false;
+-            _currentStream = next.getOctetStream();
++            _currentStream = s.getOctetStream();
+         }
+ 
+         int totalRead = 0;
+@@ -56,14 +57,15 @@ class ConstructedOctetStream
+             }
+             else
+             {
+-                ASN1OctetStringParser next = getNextParser();
+-                if (next == null)
++                ASN1OctetStringParser aos = (ASN1OctetStringParser)_parser.readObject();
++
++                if (aos == null)
+                 {
+                     _currentStream = null;
+                     return totalRead < 1 ? -1 : totalRead;
+                 }
+ 
+-                _currentStream = next.getOctetStream();
++                _currentStream = aos.getOctetStream();
+             }
+         }
+     }
+@@ -78,14 +80,15 @@ class ConstructedOctetStream
+                 return -1;
+             }
+ 
+-            ASN1OctetStringParser next = getNextParser();
+-            if (next == null)
++            ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
++    
++            if (s == null)
+             {
+                 return -1;
+             }
+-
++    
+             _first = false;
+-            _currentStream = next.getOctetStream();
++            _currentStream = s.getOctetStream();
+         }
+ 
+         for (;;)
+@@ -97,30 +100,15 @@ class ConstructedOctetStream
+                 return b;
+             }
+ 
+-            ASN1OctetStringParser next = getNextParser();
+-            if (next == null)
++            ASN1OctetStringParser s = (ASN1OctetStringParser)_parser.readObject();
++
++            if (s == null)
+             {
+                 _currentStream = null;
+                 return -1;
+             }
+ 
+-            _currentStream = next.getOctetStream();
++            _currentStream = s.getOctetStream();
+         }
+     }
+-
+-    private ASN1OctetStringParser getNextParser() throws IOException
+-    {
+-        ASN1Encodable asn1Obj = _parser.readObject();
+-        if (asn1Obj == null)
+-        {
+-            return null;
+-        }
+-
+-        if (asn1Obj instanceof ASN1OctetStringParser)
+-        {
+-            return (ASN1OctetStringParser)asn1Obj;
+-        }
+-
+-        throw new IOException("unknown object encountered: " + asn1Obj.getClass());
+-    }
+ }
+diff --git a/org/bouncycastle/asn1/pkcs/package-info.java b/org/bouncycastle/asn1/pkcs/package-info.java
+index 89fa8d6..5d57dfe 100644
+--- a/org/bouncycastle/asn1/pkcs/package-info.java
++++ b/org/bouncycastle/asn1/pkcs/package-info.java
+@@ -1,4 +1,4 @@
+ /**
+ Support classes useful for encoding and supporting the various RSA PKCS documents.
+ */
+-package org.bouncycastle.asn1.pkcs;
++package org.bouncycastle.asn1.pkcs;
+\ No newline at end of file
+diff --git a/org/bouncycastle/asn1/x500/X500NameBuilder.java b/org/bouncycastle/asn1/x500/X500NameBuilder.java
+index 6dd93d9..cee1cb6 100644
+--- a/org/bouncycastle/asn1/x500/X500NameBuilder.java
++++ b/org/bouncycastle/asn1/x500/X500NameBuilder.java
+@@ -143,4 +143,4 @@ public class X500NameBuilder
+ 
+         return new X500Name(template, vals);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/org/bouncycastle/asn1/x500/X500NameStyle.java b/org/bouncycastle/asn1/x500/X500NameStyle.java
+index 58125cf..8e4b9a8 100644
+--- a/org/bouncycastle/asn1/x500/X500NameStyle.java
++++ b/org/bouncycastle/asn1/x500/X500NameStyle.java
+@@ -79,4 +79,4 @@ public interface X500NameStyle
+      * @return an array of String aliases for the OID, zero length if there are none.
+      */
+     String[] oidToAttrNames(ASN1ObjectIdentifier oid);
+-}
+\ No newline at end of file
++}
+diff --git a/org/bouncycastle/asn1/x9/DHPublicKey.java b/org/bouncycastle/asn1/x9/DHPublicKey.java
+index 489f0b9..7b70037 100644
+--- a/org/bouncycastle/asn1/x9/DHPublicKey.java
++++ b/org/bouncycastle/asn1/x9/DHPublicKey.java
+@@ -98,4 +98,4 @@ public class DHPublicKey
+     {
+         return this.y;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/org/bouncycastle/crypto/fips/FipsKDF.java b/org/bouncycastle/crypto/fips/FipsKDF.java
+index fc52938..8dcc17d 100644
+--- a/org/bouncycastle/crypto/fips/FipsKDF.java
++++ b/org/bouncycastle/crypto/fips/FipsKDF.java
+@@ -2322,7 +2322,7 @@ public final class FipsKDF
+ 
+         public ConcatenationKDFGenerator createEngine()
+         {
+-            AgreementKDFPRF prf = (AgreementKDFPRF)algorithm.basicVariation();
++            final AgreementKDFPRF prf = (AgreementKDFPRF)algorithm.basicVariation();
+             ExtendedDigest digest = FipsSHS.createDigest(prf.algorithm);
+             Mac mac = FipsSHS.createHMac(prf.algorithm);
+ 
+@@ -2460,7 +2460,7 @@ public final class FipsKDF
+ 
+         public HKDFBytesGenerator createEngine()
+         {
+-            AgreementKDFPRF prf = (AgreementKDFPRF)algorithm.basicVariation();
++            final AgreementKDFPRF prf = (AgreementKDFPRF)algorithm.basicVariation();
+             HMac hMac = (HMac)FipsSHS.createHMac(prf.algorithm);
+ 
+             final HKDFBytesGenerator df = new HKDFBytesGenerator(hMac);
+@@ -2547,7 +2547,7 @@ public final class FipsKDF
+ 
+         public KDF2BytesGenerator createEngine()
+         {
+-            AgreementKDFPRF prf = (AgreementKDFPRF)algorithm.basicVariation();
++            final AgreementKDFPRF prf = (AgreementKDFPRF)algorithm.basicVariation();
+             ExtendedDigest digest = FipsSHS.createDigest(prf.algorithm);
+ 
+             final KDF2BytesGenerator df = new KDF2BytesGenerator(digest);
+diff --git a/org/bouncycastle/crypto/fips/FipsStatus.java b/org/bouncycastle/crypto/fips/FipsStatus.java
+index 6930b31..49acaeb 100644
+--- a/org/bouncycastle/crypto/fips/FipsStatus.java
++++ b/org/bouncycastle/crypto/fips/FipsStatus.java
+@@ -90,9 +90,9 @@ public final class FipsStatus
+         return !readyStatus.get();
+     }
+ 
+-
+     private static void checksumValidate()
+     {
++        /*
+         final String rscName = AccessController.doPrivileged(new PrivilegedAction<String>()
+         {
+             public String run()
+@@ -156,7 +156,7 @@ public final class FipsStatus
+                     moveToErrorStatus(new FipsOperationError("Module checksum failed: " + e.getMessage(), e));
+                 }
+             }
+-        }
++        }*/
+     }
+ 
+     /**
+diff --git a/org/bouncycastle/jcajce/provider/BouncyCastleFipsProvider.java b/org/bouncycastle/jcajce/provider/BouncyCastleFipsProvider.java
+index 71fda9b..773920a 100644
+--- a/org/bouncycastle/jcajce/provider/BouncyCastleFipsProvider.java
++++ b/org/bouncycastle/jcajce/provider/BouncyCastleFipsProvider.java
+@@ -896,7 +896,7 @@ public final class BouncyCastleFipsProvider
+         {
+             super(null, new HybridRandomProvider());         // stop getDefaultRNG() call
+ 
+-            SecureRandom baseRandom = getCoreSecureRandom();
++            final SecureRandom baseRandom = getCoreSecureRandom();
+ 
+             drbg = FipsDRBG.SHA512.fromEntropySource(new EntropySourceProvider()
+                 {

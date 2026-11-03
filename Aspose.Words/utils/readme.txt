@@ -1,0 +1,1 @@
+com.aspose.words.utils package contains java-only utility and helper classes.

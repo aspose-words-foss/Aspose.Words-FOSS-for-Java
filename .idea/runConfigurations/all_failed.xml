@@ -1,0 +1,25 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="all_failed" type="TestNG" singleton="true">
+    <shortenClasspath name="NONE" />
+    <option name="SUITE_NAME" value="$PROJECT_DIR$/words-java.test.all.failed.xml" />
+    <option name="PACKAGE_NAME" value="" />
+    <option name="MAIN_CLASS_NAME" value="" />
+    <option name="METHOD_NAME" value="" />
+    <option name="GROUP_NAME" value="" />
+    <option name="TEST_OBJECT" value="SUITE" />
+    <option name="VM_PARAMETERS" value="-Xmx2g -XX:+ClassUnloading -Dfile.encoding=UTF-8 -Duser.country=NZ -Duser.language=en -Duser.timezone=Pacific/Auckland -Ddir.words-java=$PROJECT_DIR$ -Ddir.root=$PROJECT_DIR$/.. -Ddir.awnet=$PROJECT_DIR$/test-data" />
+    <option name="PARAMETERS" value="" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/test-output" />
+    <option name="TEST_SEARCH_SCOPE">
+      <value defaultName="wholeProject" />
+    </option>
+    <option name="PROPERTIES_FILE" value="" />
+    <properties />
+    <listeners />
+    <method v="2">
+      <option name="Make" enabled="true" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="all" run_configuration_type="TestNG" />
+    </method>
+  </configuration>
+</component>

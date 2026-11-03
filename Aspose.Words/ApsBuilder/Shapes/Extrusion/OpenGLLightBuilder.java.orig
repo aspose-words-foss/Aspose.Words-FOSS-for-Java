@@ -1,0 +1,248 @@
+// Copyright (c) 2001-2020 Aspose Pty Ltd. All Rights Reserved.
+// 07/11/2018 by Dmitry Khudobin
+
+package com.aspose.words;
+
+// ********* THIS FILE IS AUTO PORTED *********
+
+<<<<<<< working copy
+import com.aspose.ms.System.Drawing.msPointF;
+
+
+/// <summary>
+/// Calculation of lights for 3d scenes and their installation.
+/// </summary>
+class OpenGLLightBuilder implements IOpenGLLightBuilder
+{
+    OpenGLLightBuilder(
+        ExtrusionParameters parameters,
+        float shapeDepth,
+        boolean isEnableLight,
+        IWarningCallback warningCallback
+        )
+    {
+        mExtrusionParameters = parameters;
+        mShapeCenter = mExtrusionParameters.getOrigin();
+        mIsEnableLight = isEnableLight;
+        mShapeDepth = shapeDepth;
+        if (shapeDepth < 500000.0f)
+            mShapeDepth += 300000.0f;
+
+        mWarningCallback = warningCallback;
+    }
+
+    public void initialize()
+    {
+        if (mIsEnableLight)
+        {
+            GL.Enable(EnableCap.Lighting);
+            GL.LightModel(LightModelParameter.LightModelTwoSide, 0.0f);
+            GL.LightModel(LightModelParameter.LightModelAmbient, new float[] { 0.0f, 0.0f, 0.0f, 1.0f });
+        }
+        else
+            GL.Disable(EnableCap.Lighting);
+    }
+
+    public void setLight()
+    {
+        GL.PushMatrix();
+        GL.Rotate(mExtrusionParameters.getLightRigRotationAngleZ(), 0.0f, 0.0f, 1.0f);
+        switch (mExtrusionParameters.getLightRigType())
+        {
+            case DmlLightRigType.THREE_PT:
+                ThreePointlightRig.setThreePointLight(mExtrusionParameters, mShapeDepth);
+                break;
+            default:
+                default();
+                WarningUtil.warn(
+                    mWarningCallback,
+                    WarningType.MINOR_FORMATTING_LOSS_CATEGORY,
+                    WarningSource.SHAPES,
+                    "Unsupported lighting type for shape.");
+                break;
+        }
+
+        GL.PopMatrix();
+    }
+
+    public void disableLight()
+    {
+        switch (mExtrusionParameters.getLightRigType())
+        {
+            case DmlLightRigType.THREE_PT:
+                ResetLight(LightName.Light0);
+                ResetLight(LightName.Light1);
+                ResetLight(LightName.Light2);
+                ResetLight(LightName.Light3);
+
+                GL.Disable(EnableCap.Light0);
+                GL.Disable(EnableCap.Light1);
+                GL.Disable(EnableCap.Light2);
+                GL.Disable(EnableCap.Light3);
+                break;
+            default:
+                ResetLight(LightName.Light0);
+                GL.Disable(EnableCap.Light0);
+                break;
+        }
+
+        GL.Disable(EnableCap.Lighting);
+    }
+
+    private void resetLight(LightName light)
+    {
+        if (light == LightName.Light0)
+        {
+            GL.Light(light, LightParameter.Ambient, mBlackColor);
+            GL.Light(light, LightParameter.Diffuse, mWhiteColor);
+            GL.Light(light, LightParameter.Specular, mWhiteColor);
+        }
+        else
+        {
+            GL.Light(light, LightParameter.Ambient, mBlackColor);
+            GL.Light(light, LightParameter.Diffuse, mBlackColor);
+            GL.Light(light, LightParameter.Specular, mBlackColor);
+        }
+    }
+
+    // Remove method when all lights type will be made for all bevels.
+    private void default()
+    {
+        GL.Enable(EnableCap.Light0);
+        GL.Light(LightName.Light0, LightParameter.Ambient, new float[] { 0.2f, 0.2f, 0.2f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Diffuse, mWhiteColor);
+
+        float ligthSourcePositionZ = Math.min(msPointF.getX(mShapeCenter), msPointF.getY(mShapeCenter));
+        float[] lightSourcePosition = new float[]
+            {msPointF.getX(mShapeCenter) * -1.5f, msPointF.getY(mShapeCenter) * 0.5f, ligthSourcePositionZ, 0.0f};
+
+        GL.Light(LightName.Light0, LightParameter.Position, lightSourcePosition);
+=======
+import opentk.graphics.opengl.GL;
+import opentk.graphics.opengl.EnableCap;
+import opentk.graphics.opengl.LightModelParameter;
+import opentk.graphics.opengl.LightName;
+import opentk.graphics.opengl.LightParameter;
+import com.aspose.ms.System.Drawing.msPointF;
+
+
+/// <summary>
+/// Calculation of lights for 3d scenes and their installation.
+/// </summary>
+class OpenGLLightBuilder implements IOpenGLLightBuilder
+{
+    OpenGLLightBuilder(
+        ExtrusionParameters parameters,
+        float shapeDepth,
+        boolean isEnableLight,
+        IWarningCallback warningCallback
+        )
+    {
+        mExtrusionParameters = parameters;
+        mShapeCenter = mExtrusionParameters.getOrigin();
+        mIsEnableLight = isEnableLight;
+        mShapeDepth = shapeDepth;
+        if (shapeDepth < 500000.0f)
+            mShapeDepth += 300000.0f;
+
+        mWarningCallback = warningCallback;
+    }
+
+    public void initialize()
+    {
+        if (mIsEnableLight)
+        {
+            GL.enable(EnableCap.LIGHTING);
+            GL.lightModel(LightModelParameter.LIGHT_MODEL_TWO_SIDE, 0.0f);
+            GL.lightModel(LightModelParameter.LIGHT_MODEL_AMBIENT, new float[] { 0.0f, 0.0f, 0.0f, 1.0f });
+        }
+        else
+            GL.disable(EnableCap.LIGHTING);
+    }
+
+    public void setLight()
+    {
+        GL.pushMatrix();
+        GL.rotate(mExtrusionParameters.getLightRigRotationAngleZ(), 0.0f, 0.0f, 1.0f);
+        switch (mExtrusionParameters.getLightRigType())
+        {
+            case DmlLightRigType.THREE_PT:
+                ThreePointlightRig.setThreePointLight(mExtrusionParameters, mShapeDepth);
+                break;
+            default:
+                defaultFallbackLight();
+                WarningUtil.warn(
+                    mWarningCallback,
+                    WarningType.MINOR_FORMATTING_LOSS_CATEGORY,
+                    WarningSource.SHAPES,
+                    "Unsupported lighting type for shape.");
+                break;
+        }
+
+        GL.popMatrix();
+    }
+
+    public void disableLight()
+    {
+        switch (mExtrusionParameters.getLightRigType())
+        {
+            case DmlLightRigType.THREE_PT:
+                resetLight(LightName.LIGHT_0);
+                resetLight(LightName.LIGHT_1);
+                resetLight(LightName.LIGHT_2);
+                resetLight(LightName.LIGHT_3);
+
+                GL.disable(EnableCap.LIGHT_0);
+                GL.disable(EnableCap.LIGHT_1);
+                GL.disable(EnableCap.LIGHT_2);
+                GL.disable(EnableCap.LIGHT_3);
+                break;
+            default:
+                resetLight(LightName.LIGHT_0);
+                GL.disable(EnableCap.LIGHT_0);
+                break;
+        }
+
+        GL.disable(EnableCap.LIGHTING);
+    }
+
+    private void resetLight(/*LightName*/int light)
+    {
+        if (light == LightName.LIGHT_0)
+        {
+            GL.light(light, LightParameter.AMBIENT, mBlackColor);
+            GL.light(light, LightParameter.DIFFUSE, mWhiteColor);
+            GL.light(light, LightParameter.SPECULAR, mWhiteColor);
+        }
+        else
+        {
+            GL.light(light, LightParameter.AMBIENT, mBlackColor);
+            GL.light(light, LightParameter.DIFFUSE, mBlackColor);
+            GL.light(light, LightParameter.SPECULAR, mBlackColor);
+        }
+    }
+
+    // Remove method when all lights type will be made for all bevels.
+    private void defaultFallbackLight()
+    {
+        GL.enable(EnableCap.LIGHT_0);
+        GL.light(LightName.LIGHT_0, LightParameter.AMBIENT, new float[] { 0.2f, 0.2f, 0.2f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.DIFFUSE, mWhiteColor);
+
+        float ligthSourcePositionZ = Math.min(msPointF.getX(mShapeCenter), msPointF.getY(mShapeCenter));
+        float[] lightSourcePosition = new float[]
+            {msPointF.getX(mShapeCenter) * -1.5f, msPointF.getY(mShapeCenter) * 0.5f, ligthSourcePositionZ, 0.0f};
+
+        GL.light(LightName.LIGHT_0, LightParameter.POSITION, lightSourcePosition);
+>>>>>>> merge rev
+    }
+
+    private /*final*/ ExtrusionParameters mExtrusionParameters;
+    private /*final*/ IWarningCallback mWarningCallback;
+    private /*final*/ boolean mIsEnableLight;
+    private /*final*/ float[] mWhiteColor = new float[] { 1.0f, 1.0f, 1.0f, 1.0f };
+    private /*final*/ float[] mBlackColor = new float[] { 0.0f, 0.0f, 0.0f, 1.0f };
+    private /*final*/ float mShapeDepth;
+    private /*PointF*/long mShapeCenter = msPointF.Empty;
+}
+

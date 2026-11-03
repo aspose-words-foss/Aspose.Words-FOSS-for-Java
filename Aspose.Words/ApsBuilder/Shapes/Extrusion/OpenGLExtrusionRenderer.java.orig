@@ -1,0 +1,287 @@
+// Copyright (c) 2001-2020 Aspose Pty Ltd. All Rights Reserved.
+// 27/09/2015 by Dmitry Khudobin
+
+package com.aspose.words;
+
+// ********* THIS FILE IS AUTO PORTED *********
+
+import com.aspose.ApsUnit;
+import com.aspose.StringToObjDictionary;
+import com.aspose.Dr3DShape;
+import com.aspose.ms.System.Drawing.msPointF;
+import com.aspose.ApsImage;
+<<<<<<< working copy
+import com.aspose.ms.System.msString;
+
+
+/// <summary>
+/// Renders extrusion for objects using OpenGL.
+/// </summary>
+class OpenGLExtrusionRenderer extends ExtrusionRenderer
+{
+    OpenGLExtrusionRenderer(
+        ExtrusionParameters parameters,
+        /*ApsUnit*/int frontBrushUnit,
+        StringToObjDictionary<Object> openGLGraphicContextCache,
+        IWarningCallback warningCallback)
+    {
+    	super(parameters, frontBrushUnit);
+	
+        mOpenGLGraphicContextCache = openGLGraphicContextCache;
+        mWarningCallback = warningCallback;
+    }
+
+    protected /*override*/ void complete3DShapeBuilding() throws Exception
+    {
+        ApsOpenGLExtruder apsOpenGLExtruder = (ApsOpenGLExtruder)ApsExtruder;
+
+        if (apsOpenGLExtruder != null)
+        {
+            if (mParameters.getBackDepth() > 0)
+            {
+                apsOpenGLExtruder.setBackFacesBuilder(new Dr3DModelBackFacesBuilder());
+                apsOpenGLExtruder.setSideBuilder(new Dr3DModelOpenGLFullRenderSideFacesBuilder());
+            }
+
+            setBevelBuilder(apsOpenGLExtruder);
+
+            Dr3DShape dr3DShape = apsOpenGLExtruder.build();
+            boolean isEnableLightMaterial = dr3DShape.hasBackFaces() || dr3DShape.hasBevelFaces();
+
+            Dr3DOpenGLRasterizer dr3DOpenGLRasterizer = new Dr3DOpenGLRasterizer(mOpenGLGraphicContextCache, mParameters.getShapeType(), mParameters.getBevelTopType());
+            OpenGLFacesRenderer openGLFacesRenderer = new OpenGLFacesRenderer(
+                msPointF.getX(mParameters.getOrigin()) * 2.0f,
+                msPointF.getY(mParameters.getOrigin()) * 2.0f,
+                mParameters.getDmlPathShadeType(),
+                new OpenGLShapeMaterialBuilder(mParameters.getMaterialType(), isEnableLightMaterial, mWarningCallback));
+
+            dr3DOpenGLRasterizer.setFaceFillRenderer(openGLFacesRenderer);
+            float shapeDepth = mParameters.getBackDepth() + mParameters.getBevelTopHeight();
+
+            dr3DOpenGLRasterizer.setTransformation(
+                mParameters.getOrigin(),
+                mParameters.getRotationAngleX(),
+                mParameters.getRotationAngleY(),
+                mParameters.getRotationAngleZ(),
+                mParameters.getBevelTopHeight());
+
+            dr3DOpenGLRasterizer.setLightBuilder(new OpenGLLightBuilder(
+                mParameters,
+                shapeDepth,
+                isEnableLightMaterial,
+                mWarningCallback));
+
+            ApsImage image = dr3DOpenGLRasterizer.render(getProjectionMatrix(), getModelViewMatrix(), dr3DShape);
+            mResultCanvas.add(image);
+        }
+
+        super.complete3DShapeBuilding();
+    }
+
+    private void setBevelBuilder(ApsOpenGLExtruder apsOpenGLExtruder)
+    {
+        if (mParameters.hasBevelTop())
+            switch (mParameters.getBevelTopType())
+            {
+                case DmlBevelPresetType.ANGLE:
+                case DmlBevelPresetType.CIRCLE:
+                case DmlBevelPresetType.CROSS:
+                case DmlBevelPresetType.RELAXED_INSET:
+                    if (!isBevelSupported())
+                        break;
+
+                    apsOpenGLExtruder.setBevelBuilder(new Dr3DFaceBevelBuilder(
+                        mParameters.getBevelTopWidth(),
+                        mParameters.getBevelTopHeight(),
+                        mParameters.getBevelTopType()));
+                    break;
+                default:
+                    WarningUtil.warn(
+                        mWarningCallback,
+                        WarningType.MINOR_FORMATTING_LOSS_CATEGORY,
+                        WarningSource.SHAPES,
+                        "Unsupported bevel type for shape.");
+                    break;
+            }
+    }
+
+    private boolean isBevelSupported()
+    {
+        boolean addWarning = false;
+        switch (mParameters.getShapeType())
+        {
+            case ShapeType.WAVE:
+            case ShapeType.DOUBLE_WAVE:
+            case ShapeType.FLOW_CHART_MAGNETIC_TAPE:
+            case ShapeType.CLOUD_CALLOUT:
+            case ShapeType.PLAQUE:
+            case ShapeType.LIGHTNING_BOLT:
+            case ShapeType.MOON:
+            case ShapeType.FLOW_CHART_ONLINE_STORAGE:
+            case ShapeType.FLOW_CHART_PUNCHED_TAPE:
+            case ShapeType.FLOW_CHART_MULTIDOCUMENT:
+                addWarning = true;
+                break;
+            case ShapeType.SUN:
+                if (mParameters.getBevelTopType() == DmlBevelPresetType.CIRCLE)
+                    addWarning = true;
+                break;
+            default:
+                break;
+        }
+
+        if (addWarning)
+            WarningUtil.warn(
+                mWarningCallback,
+                WarningType.MINOR_FORMATTING_LOSS_CATEGORY,
+                WarningSource.SHAPES,
+                msString.format("Unsupported bevel \"{0}\" type for shape \"{1}\".", mParameters.getBevelTopType(),
+                    mParameters.getShapeType()));
+
+        return !addWarning;
+    }
+
+    protected /*override*/ ApsExtruder getExtruder()
+    {
+        return new ApsOpenGLExtruder(mParameters.getForeDepth(), mParameters.getBackDepth(), mParameters.getShapeType(), mParameters.getExtrusionColor());
+    }
+
+    private Matrix4 getProjectionMatrix()
+    {
+        // Constants 1.6f and 10.0f have been obtained empirically. 
+        mZNear = Math.max(msPointF.getX(mParameters.getOrigin()), msPointF.getY(mParameters.getOrigin())) * 1.6f;
+        float zFar = mZNear * 10.0f;
+
+        Matrix4 projectionMatrix = mParameters.getExtrusionType() == ExtrusionType.PERSPECTIVE
+            ? Matrix4.CreatePerspectiveFieldOfView((float)(14.5 * Math.PI / 180.0), 1, mZNear, zFar)
+            : Matrix4.CreateOrthographicOffCenter(-mZNear, mZNear, -mZNear, mZNear, 10.0f, zFar);
+
+        return projectionMatrix;
+    }
+
+    private Matrix4 getModelViewMatrix()
+    {
+        // Constant 8.0f has been obtained empirically.
+        return Matrix4.LookAt(0.0f, 0.0f, mZNear * 8.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+=======
+import opentk.Matrix4;
+
+
+/// <summary>
+/// Renders extrusion for objects using OpenGL.
+/// </summary>
+class OpenGLExtrusionRenderer extends ExtrusionRenderer
+{
+    OpenGLExtrusionRenderer(
+        ExtrusionParameters parameters,
+        /*ApsUnit*/int frontBrushUnit,
+        StringToObjDictionary<Object> openGLGraphicContextCache,
+        IWarningCallback warningCallback)
+    {
+    	super(parameters, frontBrushUnit);
+	
+        mOpenGLGraphicContextCache = openGLGraphicContextCache;
+        mWarningCallback = warningCallback;
+    }
+
+    protected /*override*/ void complete3DShapeBuilding() throws Exception
+    {
+        ApsOpenGLExtruder apsOpenGLExtruder = (ApsOpenGLExtruder)ApsExtruder;
+
+        if (apsOpenGLExtruder != null)
+        {
+            if (mParameters.getBackDepth() > 0)
+            {
+                apsOpenGLExtruder.setBackFacesBuilder(new Dr3DModelBackFacesBuilder());
+                apsOpenGLExtruder.setSideBuilder(new Dr3DModelOpenGLFullRenderSideFacesBuilder());
+            }
+
+            setBevelBuilder(apsOpenGLExtruder);
+
+            Dr3DShape dr3DShape = apsOpenGLExtruder.build();
+            boolean isEnableLightMaterial = dr3DShape.hasBackFaces() || dr3DShape.hasBevelFaces();
+
+            Dr3DOpenGLRasterizer dr3DOpenGLRasterizer = new Dr3DOpenGLRasterizer(mOpenGLGraphicContextCache, mParameters.getShapeType());
+            OpenGLFacesRenderer openGLFacesRenderer = new OpenGLFacesRenderer(
+                msPointF.getX(mParameters.getOrigin()) * 2.0f,
+                msPointF.getY(mParameters.getOrigin()) * 2.0f, 
+                mParameters.getDmlPathShadeType(),
+                new OpenGLShapeMaterialBuilder(mParameters.getMaterialType(), isEnableLightMaterial, mWarningCallback));
+
+            dr3DOpenGLRasterizer.setFaceFillRenderer(openGLFacesRenderer);
+            float shapeDepth = mParameters.getBackDepth() + mParameters.getBevelTopHeight();
+
+            dr3DOpenGLRasterizer.setTransformation(
+                mParameters.getOrigin(),
+                mParameters.getRotationAngleX(),
+                mParameters.getRotationAngleY(),
+                mParameters.getRotationAngleZ(),
+                mParameters.getBevelTopHeight());
+
+            dr3DOpenGLRasterizer.setLightBuilder(new OpenGLLightBuilder(
+                mParameters,
+                shapeDepth,
+                isEnableLightMaterial,
+                mWarningCallback));
+
+            ApsImage image = dr3DOpenGLRasterizer.render(getProjectionMatrix(), getModelViewMatrix(), dr3DShape);
+            mResultCanvas.add(image);
+        }
+
+        super.complete3DShapeBuilding();
+    }
+
+    private void setBevelBuilder(ApsOpenGLExtruder apsOpenGLExtruder)
+    {
+        if (mParameters.hasBevelTop())
+            switch (mParameters.getBevelTopType())
+            {
+                case DmlBevelPresetType.ANGLE:
+                case DmlBevelPresetType.CIRCLE:
+                case DmlBevelPresetType.CROSS:
+                case DmlBevelPresetType.RELAXED_INSET:
+                    apsOpenGLExtruder.setBevelBuilder(new Dr3DFaceBevelBuilder(
+                        mParameters.getBevelTopWidth(),
+                        mParameters.getBevelTopHeight(),
+                        mParameters.getBevelTopType()));
+                    break;
+                default:
+                    WarningUtil.warn(
+                        mWarningCallback,
+                        WarningType.MINOR_FORMATTING_LOSS_CATEGORY, 
+                        WarningSource.SHAPES,
+                        "Unsupported bevel type for shape.");
+                    break;
+            }
+    }
+
+    protected /*override*/ ApsExtruder getExtruder()
+    {
+        return new ApsOpenGLExtruder(mParameters.getForeDepth(), mParameters.getBackDepth(), mParameters.getShapeType(), mParameters.getExtrusionColor());
+    }
+
+    private Matrix4 getProjectionMatrix()
+    {
+        // Constants 1.6f and 10.0f have been obtained empirically. 
+        mZNear = Math.max(msPointF.getX(mParameters.getOrigin()), msPointF.getY(mParameters.getOrigin())) * 1.6f;
+        float zFar = mZNear * 10.0f;
+
+        Matrix4 projectionMatrix = mParameters.getExtrusionType() == ExtrusionType.PERSPECTIVE
+            ? Matrix4.createPerspectiveFieldOfView((float)(14.5 * Math.PI / 180.0), 1f, mZNear, zFar)
+            : Matrix4.createOrthographicOffCenter(-mZNear, mZNear, -mZNear, mZNear, 10.0f, zFar);
+
+        return projectionMatrix;
+    }
+
+    private Matrix4 getModelViewMatrix()
+    {
+        // Constant 8.0f has been obtained empirically.
+        return Matrix4.lookAt(0.0f, 0.0f, mZNear * 8.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+>>>>>>> merge rev
+    }
+
+    private float mZNear;
+    private /*final*/ StringToObjDictionary<Object> mOpenGLGraphicContextCache;
+    private /*final*/ IWarningCallback mWarningCallback;
+}
+

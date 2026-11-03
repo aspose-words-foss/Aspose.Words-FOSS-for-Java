@@ -1,0 +1,267 @@
+diff --git a/pom.xml b/pom.xml
+index 6ddb0e1..c869be4 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -9,7 +9,7 @@
+ 
+     <groupId>com.fasterxml.woodstox</groupId>
+     <artifactId>woodstox-core</artifactId>
+-    <version>6.5.1</version>
++    <version>6.5.2</version>
+     <packaging>bundle</packaging>
+     <name>Woodstox</name>
+     <description>Woodstox is a high-performance XML processor that implements Stax (JSR-173),
+@@ -34,7 +34,7 @@ SAX2 and Stax2 APIs
+         <connection>scm:git:git@github.com:FasterXML/woodstox.git</connection>
+         <developerConnection>scm:git:git@github.com:FasterXML/woodstox.git</developerConnection>
+         <url>https://github.com/FasterXML/woodstox</url>
+-        <tag>woodstox-core-6.5.1</tag>
++        <tag>HEAD</tag>
+     </scm>
+ 
+     <properties>
+@@ -127,7 +127,6 @@ SAX2 and Stax2 APIs
+ <!--
+             <scope>provided</scope>
+  -->
+-            <optional>true</optional>
+         </dependency>
+ 
+ 	<!-- 03-Jun-2019, tatu: Not sure why this was added as a dep as it's only one class,
+@@ -257,6 +256,23 @@ SAX2 and Stax2 APIs
+                 </configuration>
+             </plugin>
+ 
++            <plugin>
++                <groupId>org.apache.maven.plugins</groupId>
++                <artifactId>maven-jar-plugin</artifactId>
++                <version>3.1.2</version>
++                <executions>
++                    <execution>
++                        <phase>package</phase>
++                        <goals>
++                            <goal>jar</goal>
++                        </goals>
++                        <configuration>
++                            <classifier>aspose</classifier>
++                        </configuration>
++                    </execution>
++                </executions>
++            </plugin>
++
+             <plugin>
+             <!--  We will shade MSV, partly to simplify deployment, but also to work
+                   around Java 9+ module-info issues (MSV not retrofitted)
+diff --git a/src/main/java/com/ctc/wstx/api/ReaderConfig.java b/src/main/java/com/ctc/wstx/api/ReaderConfig.java
+index 56a6570..6618c36 100644
+--- a/src/main/java/com/ctc/wstx/api/ReaderConfig.java
++++ b/src/main/java/com/ctc/wstx/api/ReaderConfig.java
+@@ -726,6 +726,10 @@ public final class ReaderConfig
+     public boolean willNormalizeLFs() {
+         return _hasConfigFlag(CFG_NORMALIZE_LFS);
+     }
++
++    public boolean willNormalizeAttrValues() {
++        return _hasConfigFlag(CFG_NORMALIZE_ATTR_VALUES);
++    }
+     
+     public boolean willTreatCharRefsAsEnts() {
+         return _hasConfigFlag(CFG_TREAT_CHAR_REFS_AS_ENTS);
+@@ -975,6 +979,11 @@ public final class ReaderConfig
+         setConfigFlag(CFG_NORMALIZE_LFS, state);
+     }
+ 
++    // FIX WORDSJAVA-1069: Tab inside a list number in TOC are converted to space.
++    public void doNormalizeAttrValues(final boolean state) {
++        setConfigFlag(CFG_NORMALIZE_ATTR_VALUES, state);
++    }
++
+     public void setInputBufferLength(int value)
+     {
+         /* Let's enforce minimum here; necessary to allow longest
+diff --git a/src/main/java/com/ctc/wstx/cfg/InputConfigFlags.java b/src/main/java/com/ctc/wstx/cfg/InputConfigFlags.java
+index eece3d6..ae16fa8 100644
+--- a/src/main/java/com/ctc/wstx/cfg/InputConfigFlags.java
++++ b/src/main/java/com/ctc/wstx/cfg/InputConfigFlags.java
+@@ -137,6 +137,12 @@ public interface InputConfigFlags
+     final static int CFG_NORMALIZE_LFS  =   0x4000;
+     //final static int CFG_NORMALIZE_ATTR_VALUES = 0x8000;
+ 
++    /**
++     * FIX WORDSJAVA-1069: Tab inside a list number in TOC are converted to space.
++     * If true, the whitespaces in attribute values will be replaced with spaces.
++     */
++    final static int CFG_NORMALIZE_ATTR_VALUES = 0x8000;
++
+     // // // Caching
+ 
+     /**
+diff --git a/src/main/java/com/ctc/wstx/sr/BasicStreamReader.java b/src/main/java/com/ctc/wstx/sr/BasicStreamReader.java
+index 4378eef..f205d8b 100644
+--- a/src/main/java/com/ctc/wstx/sr/BasicStreamReader.java
++++ b/src/main/java/com/ctc/wstx/sr/BasicStreamReader.java
+@@ -1976,27 +1976,40 @@ public abstract class BasicStreamReader
+                 : getNextChar(SUFFIX_IN_ATTR_VALUE);
+             // Let's do a quick for most attribute content chars:
+             if (c <= '\'') {
+-                if (c < CHAR_SPACE) {
+-                    if (c == '\n') {
+-                        markLF();
+-                    } else if (c == '\r') {
+-                        // 04-Mar-2006, TSa: Linefeed normalization only done if enabled -
+-                        //   specifically, 2-char lfs from int. entities are not coalesced.
+-                        //   Now... whether to try to count them as one or not... easier not to;
+-                        //   esp. since we may not be able to distinguish char entity originated ones
+-                        //   from real ones.
+-                        if (mNormalizeLFs) {
+-                            c = getNextChar(SUFFIX_IN_ATTR_VALUE);
+-                            if (c != '\n') { // nope, not 2-char lf (Mac?)
+-                                --mInputPtr;
++                if (c < CHAR_SPACE)
++                {
++                    // FIX WORDSJAVA-1069: Tab inside a list number in TOC are converted to space.
++                    // Replace whitespaces in attribute values only if it is specified explicitly
++                    // via ReaderConfig.doNormalizeAttrValues(true).
++                    if (mNormalizeAttrValues) {
++                        if (c == '\n')
++                        {
++                            markLF();
++                        }
++                        else if (c == '\r')
++                        {
++                            // 04-Mar-2006, TSa: Linefeed normalization only done if enabled -
++                            //   specifically, 2-char lfs from int. entities are not coalesced.
++                            //   Now... whether to try to count them as one or not... easier not to;
++                            //   esp. since we may not be able to distinguish char entity originated ones
++                            //   from real ones.
++                            if (mNormalizeLFs)
++                            {
++                                c = getNextChar(SUFFIX_IN_ATTR_VALUE);
++                                if (c != '\n')
++                                { // nope, not 2-char lf (Mac?)
++                                    --mInputPtr;
++                                }
+                             }
++                            markLF();
+                         }
+-                        markLF();
+-                    } else if (c != '\t') {
+-                        throwInvalidSpace(c);
++                        else if (c != '\t')
++                        {
++                            throwInvalidSpace(c);
++                        }
++                        // Whatever it was, it'll be 'normal' space now.
++                        c = CHAR_SPACE;
+                     }
+-                    // Whatever it was, it'll be 'normal' space now.
+-                    c = CHAR_SPACE;
+                 } else if (c == openingQuote) {
+                     // 06-Aug-2004, TSa: Can get these via entities; only "real" end quotes in same
+                     //    scope count. Note, too, that since  this will only be done at root level,
+diff --git a/src/main/java/com/ctc/wstx/sr/StreamScanner.java b/src/main/java/com/ctc/wstx/sr/StreamScanner.java
+index d2257a6..89e2a48 100644
+--- a/src/main/java/com/ctc/wstx/sr/StreamScanner.java
++++ b/src/main/java/com/ctc/wstx/sr/StreamScanner.java
+@@ -282,6 +282,12 @@ public abstract class StreamScanner
+      */
+     protected boolean mNormalizeLFs;
+ 
++    /**
++     * FIX WORDSJAVA-1069: Tab inside a list number in TOC are converted to space.
++     * Indicates whether whitespaces in the attribute values are to be normalized or not.
++     */
++    protected boolean mNormalizeAttrValues;
++
+     /**
+      * Flag that indicates whether all escaped chars are accepted in XML 1.0.
+      *
+@@ -395,6 +401,8 @@ public abstract class StreamScanner
+         mAllowXml11EscapedCharsInXml10 = mConfig.willAllowXml11EscapedCharsInXml10();
+ 
+         mNormalizeLFs = mConfig.willNormalizeLFs();
++        // FIX WORDSJAVA-1069: Tab inside a list number in TOC are converted to space.
++        mNormalizeAttrValues = mConfig.willNormalizeAttrValues();
+         mInputBuffer = null;
+         mInputPtr = mInputEnd = 0;
+         mEntityResolver = res;
+@@ -1379,15 +1387,15 @@ public abstract class StreamScanner
+                     }
+                 }
+             } else if (c == 'l') {
+-                // guaranteed at least 3 minimum so
+-                if (mInputBuffer[mInputPtr+1] == 't'
++                if (avail >= 3
++                    && mInputBuffer[mInputPtr+1] == 't'
+                     && mInputBuffer[mInputPtr+2] == ';') {
+                     mInputPtr += 3;
+                     return '<';
+                 }
+             } else if (c == 'g') {
+-                // guaranteed at least 3 minimum so
+-                if (mInputBuffer[mInputPtr+1] == 't'
++                if (avail >= 3
++                    && mInputBuffer[mInputPtr+1] == 't'
+                     && mInputBuffer[mInputPtr+2] == ';') {
+                     mInputPtr += 3;
+                     return '>';
+@@ -1472,14 +1480,14 @@ public abstract class StreamScanner
+                 }
+             }
+         } else if (c == 'l') {
+-            // guaranteed at least 3 minimum so
+-            if (mInputBuffer[mInputPtr+1] == 't'
++            if (avail >= 3
++                && mInputBuffer[mInputPtr+1] == 't'
+                 && mInputBuffer[mInputPtr+2] == ';') {
+                 return null;
+             }
+         } else if (c == 'g') {
+-            // guaranteed at least 3 minimum so
+-            if (mInputBuffer[mInputPtr+1] == 't'
++            if (avail >= 3
++                && mInputBuffer[mInputPtr+1] == 't'
+                 && mInputBuffer[mInputPtr+2] == ';') {
+                 return null;
+             }
+@@ -1676,13 +1684,19 @@ public abstract class StreamScanner
+         }
+ 
+         // 28-Jun-2004, TSa: Do we support external entity expansion?
++        XMLResolver resolver = mEntityResolver;
+         boolean isExt = ed.isExternal();
+         if (isExt) {
+             if (!allowExt) { // never ok in attribute value...
+                 throwParseError("Encountered a reference to external parsed entity \"{0}\" when expanding attribute value: not legal as per XML 1.0/1.1 #3.1", id, null);
+             }
+-            if (!mConfig.willSupportExternalEntities()) {
+-                throwParseError("Encountered a reference to external entity \"{0}\", but stream reader has feature \"{1}\" disabled",
++            if (!mConfig.willSupportExternalEntities())
++            {
++                XMLResolver undeclaredEntityResolver = mConfig.getUndeclaredEntityResolver();
++                if (undeclaredEntityResolver != null)
++                    resolver = undeclaredEntityResolver;
++                else
++                    throwParseError("Encountered a reference to external entity \"{0}\", but stream reader has feature \"{1}\" disabled",
+                                 id, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES);
+             }
+         }
+@@ -1692,7 +1706,7 @@ public abstract class StreamScanner
+         oldInput.saveContext(this);
+         WstxInputSource newInput = null;
+         try {
+-            newInput = ed.expand(oldInput, mEntityResolver, mConfig, mDocXmlVersion);
++            newInput = ed.expand(oldInput, resolver, mConfig, mDocXmlVersion);
+         } catch (FileNotFoundException fex) {
+             /* Let's catch and rethrow this just so we get more meaningful
+              * description (with input source position etc)
+@@ -2228,6 +2242,9 @@ public abstract class StreamScanner
+              * white space, and coalescing remaining ws into single spaces.
+              */
+             if (spaceToAdd) { // pending white space to add?
++                if (c == CHAR_SPACE) { // still a space; let's skip
++                    continue;
++                }
+                 /* ok: if we have non-space, we'll either forget about
+                  * space(s) (if nothing has been output, ie. leading space),
+                  * or output a single space (in-between non-white space)

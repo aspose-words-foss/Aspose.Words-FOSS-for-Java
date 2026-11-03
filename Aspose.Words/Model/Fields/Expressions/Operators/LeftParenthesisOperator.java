@@ -1,0 +1,23 @@
+// Copyright (c) 2001-2026 Aspose Pty Ltd. All Rights Reserved.
+// 05/11/2006 by Dmitry Vorobyev
+
+package com.aspose.words;
+
+// ********* THIS FILE IS AUTO PORTED *********
+
+
+/// <summary>
+/// Represents a left parenthesis operator.
+/// </summary>
+/// <remarks>
+/// This is a special operator that is missing from the listing of expression operators. Actually, this is not
+/// an operator because it does not have operands and cannot be evaluated. But it is convenient to treat
+/// it as an operator during parsing because it allows to control the order and due to other reasons.
+/// </remarks>
+class LeftParenthesisOperator extends Operator
+{
+    /*override*/ boolean isLeftParenthesis() { return true; }
+
+    /*override*/ int getOrder() { return 9; }
+}
+

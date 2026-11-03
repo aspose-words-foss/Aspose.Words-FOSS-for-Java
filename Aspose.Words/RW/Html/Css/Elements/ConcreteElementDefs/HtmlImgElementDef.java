@@ -1,0 +1,137 @@
+// Copyright (c) 2001-2026 Aspose Pty Ltd. All Rights Reserved.
+// 04/03/2013 by Victor Chebotok
+
+package com.aspose.words;
+
+// ********* THIS FILE IS AUTO PORTED *********
+
+import com.aspose.ms.java.collections.StringSwitchMap;
+import com.aspose.ms.System.msString;
+import com.aspose.ms.System.StringComparison;
+
+
+class HtmlImgElementDef extends HtmlElementDef
+{
+    HtmlImgElementDef(/*CssDocumentMode*/int documentMode)
+    {
+        mDocumentMode = documentMode;
+    }
+
+    protected /*override*/ void applyStyles(IHtmlElementProvider element, CssDeclarationCollectionBuilder cssDeclarations)
+    {
+        // User agent (default) style.
+        if (msString.equals(element.getAttributeValue("type", ""), "hidden", 
+            StringComparison.ORDINAL_IGNORE_CASE))
+        {
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("display", CssValue.None));
+        }
+
+        // Presentational hints.
+
+        // "align" attribute
+        switch (gStringSwitchMap.of(msString.toLowerInvariant(element.getAttributeValue("align", ""))))
+        {
+            case /*"left"*/0:
+            {
+                cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("float", CssValue.Left));
+                if (mDocumentMode == CssDocumentMode.QUIRKS)
+                {
+                    CssValue threePx = new CssLengthValue(3.0, CssUnit.PX);
+                    cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("margin-right", threePx));
+                }
+                break;
+            }
+            case /*"right"*/1:
+            {
+                cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("float", CssValue.Right));
+                if (mDocumentMode == CssDocumentMode.QUIRKS)
+                {
+                    CssValue threePx = new CssLengthValue(3.0, CssUnit.PX);
+                    cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("margin-left", threePx));
+                }
+                break;
+            }
+            case /*"top"*/2:
+                cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("vertical-align", CssValue.Top));
+                break;
+            case /*"baseline"*/3:
+                cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("vertical-align", CssValue.Baseline));
+                break;
+            case /*"texttop"*/4:
+                cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("vertical-align", CssValue.TextTop));
+                break;
+            // "center" and "middle" values should be mapped to special CSS property values
+            // that align this element's vertical middle with the parent element's baseline.
+            // Consider implementing that special CSS value (for example, "-aw-baseline-middle"),
+            // if the CSS "middle" value causes trouble.
+            case /*"center"*/5:
+            case /*"middle"*/6:
+            case /*"absmiddle"*/7:
+            case /*"abscenter"*/8:
+                cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("vertical-align", CssValue.Middle));
+                break;
+            case /*"bottom"*/9:
+                cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("vertical-align", CssValue.Bottom));
+                break;
+            default:
+                // Other 'align' attribute values are ignored.
+                break;
+        }
+
+        translateHeightAttributeToCss(element, cssDeclarations);
+        translateWidthAttributeToCss(element, cssDeclarations);
+
+        // "hspace" attribute
+        CssValue hspaceValue = CssValue.parseLegacyDimension(element.getAttributeValue("hspace"));
+        if (hspaceValue != null)
+        {
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("margin-left", hspaceValue));
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("margin-right", hspaceValue));
+        }
+
+        // "vspace" attribute
+        CssValue vspaceValue = CssValue.parseLegacyDimension(element.getAttributeValue("vspace"));
+        if (vspaceValue != null)
+        {
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("margin-top", vspaceValue));
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("margin-bottom", vspaceValue));
+        }
+
+        // "border" attribute
+        // As stated by the HTML 5 specification, the following rules only apply when an element is contained 
+        // within a hyperlink. But we ignore this rule because all popular browsers ignore this rule too.
+        int borderValue = HtmlUtil.parseNonNegativeInteger(element.getAttributeValue("border"));
+        if (borderValue > 0)
+        {
+            CssValue borderWidth = new CssLengthValue(borderValue, CssUnit.PX);
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("border-top-width", borderWidth));
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("border-right-width", borderWidth));
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("border-bottom-width", borderWidth));
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("border-left-width", borderWidth));
+
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("border-top-style", CssValue.Solid));
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("border-right-style", CssValue.Solid));
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("border-bottom-style", CssValue.Solid));
+            cssDeclarations.addOrReplace(new CssSpecifiedDeclaration("border-left-style", CssValue.Solid));
+        }
+    }
+
+    private /*final*/ /*CssDocumentMode*/int mDocumentMode;
+
+	//JAVA-added for string switch emulation
+	private static final StringSwitchMap gStringSwitchMap = new StringSwitchMap
+	(
+		"left",
+		"right",
+		"top",
+		"baseline",
+		"texttop",
+		"center",
+		"middle",
+		"absmiddle",
+		"abscenter",
+		"bottom"
+	);
+
+}
+

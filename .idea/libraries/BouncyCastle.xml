@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="BouncyCastle">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/ms/lib/bc-fips.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

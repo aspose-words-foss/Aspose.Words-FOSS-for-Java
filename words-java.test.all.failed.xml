@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="Failed" parallel="false">
+
+	<suite-files> <!-- "Aspose Tests" is the suite name in words-java.test.all.xml -->
+		<suite-file path="./test-report/Aspose Tests/Parallel-aspose-testng-failed.xml" />
+		<suite-file path="./test-report/Aspose Tests/Single Threaded-aspose-testng-failed.xml" />
+	</suite-files>
+	
+</suite>

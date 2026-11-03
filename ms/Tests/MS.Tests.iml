@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <output url="file://$MODULE_DIR$/../../classes/production" />
+    <output-test url="file://$MODULE_DIR$/../../classes/test" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$" isTestSource="true" packagePrefix="com.aspose.ms" />
+      <sourceFolder url="file://$MODULE_DIR$/NUnit/Framework" isTestSource="true" packagePrefix="com.aspose.ms" />
+      <sourceFolder url="file://$MODULE_DIR$/System" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/System/Collections" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/System/Drawing" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/System/Globalization" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/System/IO" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/System/Number" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/System/Text" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/System/Threading" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/System/Xml" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/System/Text/RegularExpressions" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/BouncyCastle" isTestSource="true" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/java/System/Text" isTestSource="true" packagePrefix="com.aspose.ms.System.Text" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="MS" />
+    <orderEntry type="library" name="TestNG" level="project" />
+    <orderEntry type="library" name="WoodstoxStAX" level="project" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="module" module-name="Aspose.TestFx" />
+    <orderEntry type="module" module-name="Aspose.Foundation" />
+    <orderEntry type="module" module-name="Aspose.Words" />
+  </component>
+</module>

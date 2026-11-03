@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Build script of the reduced (FOSS) Aspose.Words for Java.
+
+     Three modules, in this order: MS (Java implementation of the .NET base classes), Aspose.Foundation, Aspose.Words.
+     No obfuscation, no signing, no Reporting, no Shaping. MS lives in ms/ of the published repository; in the Aspose
+     working copies it lives in the porter repository next to this one (../csporter/ms), which the script falls back to.
+
+     Usage:  ant -f words-java.foss.build.xml -Djdk.home=<path to a JDK 8> [compile | clean | jar]
+
+     Third-party libraries are downloaded from Maven Central into libs/ by the target "fetch-libs" (the build runs it) and
+     checked against the SHA-256 sums below; once downloaded, they are reused and the build works offline. Only the two
+     libraries that Aspose patched are kept in the repository (ms/lib; how they were changed: third-party/).
+
+     This script gives javac one root per module. The ported sources do not follow the package = folder convention,
+     which javac does not require; it only means Ant cannot tell stale classes apart, so every build is a full build. -->
+<project name="words-java.foss" default="compile" basedir="." xmlns:if="ant:if" xmlns:unless="ant:unless">
+
+    <!-- The release, the same as AssemblyConstants.VERSION; it goes into the jar manifest. -->
+    <property name="version" value="26.3.0"/>
+    <property name="jdk.home" value="${java.home}/.."/>
+    <property name="javac.exe" value="${jdk.home}/bin/javac"/>
+    <condition property="ms.dir" value="${basedir}/ms" else="${basedir}/../csporter/ms">
+        <available file="${basedir}/ms/src/main" type="dir"/>
+    </condition>
+    <property name="out.dir" value="${basedir}/classes/production"/>
+    <property name="lib.dir" value="${basedir}/lib"/>
+    <property name="compiler.args" value="-encoding UTF-8 -source 1.7 -target 1.7 -Xmaxerrs 100000 -Xmaxwarns 0"/>
+    <property name="compiler.max.memory" value="1500m"/>
+    <property name="ms.flavour" value="release"/>
+    <property name="libs.dir" value="${basedir}/libs"/>
+    <property name="maven.repository" value="https://repo1.maven.org/maven2"/>
+
+    <!-- ===== Third-party libraries ===== -->
+
+    <!-- Downloads one jar from the Maven repository, unless it is there already, and verifies its SHA-256 sum.
+         path: the artifact folder in the repository (group with slashes / artifact / version). -->
+    <macrodef name="maven-jar">
+        <attribute name="path"/>
+        <attribute name="file"/>
+        <attribute name="sha256"/>
+        <sequential>
+            <get src="${maven.repository}/@{path}/@{file}" dest="${libs.dir}/@{file}" skipexisting="true"/>
+            <checksum file="${libs.dir}/@{file}" algorithm="SHA-256" property="@{sha256}" verifyproperty="checksum.ok.@{file}"/>
+            <fail message="Wrong SHA-256 sum of ${libs.dir}/@{file}. Delete the file and build again.">
+                <condition>
+                    <isfalse value="${checksum.ok.@{file}}"/>
+                </condition>
+            </fail>
+        </sequential>
+    </macrodef>
+
+    <target name="fetch-libs" description="Download the third-party libraries from Maven Central">
+        <mkdir dir="${libs.dir}"/>
+        <!-- Used by the MS module. -->
+        <maven-jar path="org/codehaus/woodstox/stax2-api/4.2.1" file="stax2-api-4.2.1.jar"
+                   sha256="678567e48b51a42c65c699f266539ad3d676d4b1a5b0ad7d89ece8b9d5772579"/>
+        <!-- Image codecs used by the hand-written image I/O layer. -->
+        <maven-jar path="com/twelvemonkeys/common/common-lang/3.12.0" file="common-lang-3.12.0.jar"
+                   sha256="5c65e504b5b64d80683e0fa70a1dd154dd83d4de7da37f21e950f5a9c03bc66d"/>
+        <maven-jar path="com/twelvemonkeys/common/common-io/3.12.0" file="common-io-3.12.0.jar"
+                   sha256="bfacfeb02acac47dbfd1fab0002eaeca65547d04249498b654320c9e0fdf6647"/>
+        <maven-jar path="com/twelvemonkeys/common/common-image/3.12.0" file="common-image-3.12.0.jar"
+                   sha256="62a3821c724fadfda346c1e2d83b0c506a0c4074be269a52bf4e3192c7dd92bc"/>
+        <maven-jar path="com/twelvemonkeys/imageio/imageio-core/3.12.0" file="imageio-core-3.12.0.jar"
+                   sha256="34c6f91bf3b217ed0115bce8283238fbd0264562aa682b4226a3960d0ede9815"/>
+        <maven-jar path="com/twelvemonkeys/imageio/imageio-metadata/3.12.0" file="imageio-metadata-3.12.0.jar"
+                   sha256="797d026b67d07e6d5eb00a1ab53a55acaab6f80a71c5ee325572093eb90c0caa"/>
+        <maven-jar path="com/twelvemonkeys/imageio/imageio-tiff/3.12.0" file="imageio-tiff-3.12.0.jar"
+                   sha256="01ac6381de2c95603cb3c15c3b1396e28f7c3df10a9ff55b017c36663a9db455"/>
+        <maven-jar path="com/twelvemonkeys/imageio/imageio-webp/3.12.0" file="imageio-webp-3.12.0.jar"
+                   sha256="43dc447ccfe34c5c5c6f5d31190270e1f9bf65f60375d697ae2a8ff433468526"/>
+        <maven-jar path="org/sejda/imageio/webp-imageio/0.1.6" file="webp-imageio-0.1.6.jar"
+                   sha256="3d30473ef5cadf126a25b2613cbe36218ba7d4184be873edc8f28a183a9fb29d"/>
+        <maven-jar path="com/pngencoder/pngencoder/0.15.0" file="pngencoder-0.15.0.jar"
+                   sha256="1a75a53ebfe2f0d078231cda01521039ab67f0179d78537f22e81432af386e14"/>
+        <!-- TestNG and the libraries it needs at run time. BeanShell, which TestNG declares too, is needed only for BeanShell
+             method selectors in suites; the tests do not use them. -->
+        <maven-jar path="org/testng/testng/6.8" file="testng-6.8.jar"
+                   sha256="c0f2845a7cc87e10845d6f99d41ddbeda590972aead83e672714ff7b1642cd03"/>
+        <maven-jar path="com/beust/jcommander/1.27" file="jcommander-1.27.jar"
+                   sha256="0b7873f51a5f292637f49423d9a83b19de15c4be3dc092decbd6afeff56263fa"/>
+        <maven-jar path="org/yaml/snakeyaml/1.6" file="snakeyaml-1.6.jar"
+                   sha256="5a7bb35371ac33c35ccc7f04ca0488cb15d573dc8df16dca9090287d74d3594b"/>
+        <!-- Other test libraries. -->
+        <maven-jar path="xmlunit/xmlunit/1.2" file="xmlunit-1.2.jar"
+                   sha256="73b0dbc4c9f789031b4a15198a38121387a15760b9285f64e724ab86a7fbeda9"/>
+        <maven-jar path="net/java/dev/jna/jna/5.16.0" file="jna-5.16.0.jar"
+                   sha256="3f5233589a799eb66dc2969afa3433fb56859d3d787c58b9bc7dd9e86f0a250c"/>
+        <maven-jar path="net/java/dev/jna/jna-platform/5.16.0" file="jna-platform-5.16.0.jar"
+                   sha256="e5a79523964509757555782bb60283e4902611013f107e4600dc93298f73f382"/>
+    </target>
+
+    <path id="libs.testng">
+        <pathelement location="${libs.dir}/testng-6.8.jar"/>
+        <pathelement location="${libs.dir}/jcommander-1.27.jar"/>
+        <pathelement location="${libs.dir}/snakeyaml-1.6.jar"/>
+    </path>
+
+    <path id="libs.ms">
+        <pathelement location="${libs.dir}/stax2-api-4.2.1.jar"/>
+        <pathelement location="${ms.dir}/lib/woodstox-core-6.5.2-aspose.jar"/>
+        <pathelement location="${ms.dir}/lib/bc-fips.jar"/>
+    </path>
+
+    <!-- Image codecs used by the hand-written image I/O layer. -->
+    <path id="libs.imaging">
+        <pathelement location="${libs.dir}/common-lang-3.12.0.jar"/>
+        <pathelement location="${libs.dir}/common-io-3.12.0.jar"/>
+        <pathelement location="${libs.dir}/common-image-3.12.0.jar"/>
+        <pathelement location="${libs.dir}/imageio-core-3.12.0.jar"/>
+        <pathelement location="${libs.dir}/imageio-metadata-3.12.0.jar"/>
+        <pathelement location="${libs.dir}/imageio-tiff-3.12.0.jar"/>
+        <pathelement location="${libs.dir}/imageio-webp-3.12.0.jar"/>
+        <pathelement location="${libs.dir}/webp-imageio-0.1.6.jar"/>
+        <pathelement location="${libs.dir}/pngencoder-0.15.0.jar"/>
+    </path>
+
+    <path id="classpath.production">
+        <pathelement location="${out.dir}"/>
+        <path refid="libs.ms"/>
+        <path refid="libs.imaging"/>
+    </path>
+
+    <patternset id="ignored.files">
+        <!-- Java 9 module descriptor; everything else is compiled, exactly as the IDE does. -->
+        <exclude name="**/module-info.java"/>
+    </patternset>
+
+    <target name="clean" description="Delete compiled classes">
+        <delete dir="${out.dir}"/>
+    </target>
+
+    <target name="compile.ms" depends="fetch-libs" description="Compile module MS">
+        <mkdir dir="${out.dir}"/>
+        <javac destdir="${out.dir}" debug="on" nowarn="on" memorymaximumsize="${compiler.max.memory}" fork="true"
+               executable="${javac.exe}" encoding="UTF-8" includeantruntime="false">
+            <compilerarg line="${compiler.args}"/>
+            <classpath refid="libs.ms"/>
+            <src path="${ms.dir}/src/main"/>
+            <!-- Emulation of the .NET DEBUG constant: src/release has JavaDebug.ON = false, src/debug has it true.
+                 Tests need -Dms.flavour=debug: test-mode behaviour (e.g. the predictable random generator) is compiled in
+                 only when JavaDebug.ON, exactly as the IDE module and the stock test build do it. -->
+            <src path="${ms.dir}/src/${ms.flavour}"/>
+            <patternset refid="ignored.files"/>
+        </javac>
+        <copy todir="${out.dir}/com/aspose/words/resources/">
+            <fileset dir="${ms.dir}/src/main/com/aspose/words/resources/"/>
+        </copy>
+    </target>
+
+    <target name="compile.foundation" depends="compile.ms" description="Compile module Aspose.Foundation">
+        <javac destdir="${out.dir}" debug="on" nowarn="on" memorymaximumsize="${compiler.max.memory}" fork="true"
+               executable="${javac.exe}" encoding="UTF-8" includeantruntime="false">
+            <compilerarg line="${compiler.args}"/>
+            <classpath refid="classpath.production"/>
+            <src path="${basedir}/Aspose.Foundation/Aspose.Foundation"/>
+            <exclude name="Resources/**"/>
+            <patternset refid="ignored.files"/>
+        </javac>
+        <copy todir="${out.dir}">
+            <fileset dir="${basedir}/Aspose.Foundation/Aspose.Foundation/Resources"/>
+        </copy>
+    </target>
+
+    <target name="compile.words" depends="compile.foundation" description="Compile module Aspose.Words">
+        <javac destdir="${out.dir}" debug="on" nowarn="on" memorymaximumsize="${compiler.max.memory}" fork="true"
+               executable="${javac.exe}" encoding="UTF-8" includeantruntime="false">
+            <compilerarg line="${compiler.args}"/>
+            <classpath refid="classpath.production"/>
+            <src path="${basedir}/Aspose.Words"/>
+            <exclude name="Resources/**"/>
+            <patternset refid="ignored.files"/>
+        </javac>
+        <copy todir="${out.dir}">
+            <fileset dir="${basedir}/Aspose.Words/Resources"/>
+        </copy>
+    </target>
+
+    <target name="compile" depends="clean, compile.words" description="Full build of the production classes"/>
+
+    <!-- ===== Tests. Compiled into a separate folder; the order follows the dependencies between the test modules. ===== -->
+
+    <property name="test.out.dir" value="${basedir}/classes/test"/>
+    <!-- Test sources use lambdas, so they need Java 8 even while the library itself still compiles as 1.7. -->
+    <property name="compiler.args.tests" value="-encoding UTF-8 -source 1.8 -target 1.8 -Xmaxerrs 100000 -Xmaxwarns 0"/>
+
+    <path id="classpath.test">
+        <pathelement location="${test.out.dir}"/>
+        <path refid="classpath.production"/>
+        <path refid="libs.testng"/>
+        <pathelement location="${libs.dir}/xmlunit-1.2.jar"/>
+        <!-- The hand-written gold comparer client talks to Win32 through JNA. -->
+        <pathelement location="${libs.dir}/jna-5.16.0.jar"/>
+        <pathelement location="${libs.dir}/jna-platform-5.16.0.jar"/>
+    </path>
+
+    <macrodef name="compile-tests">
+        <attribute name="srcdir"/>
+        <sequential>
+            <mkdir dir="${test.out.dir}"/>
+            <javac destdir="${test.out.dir}" debug="on" nowarn="on" memorymaximumsize="${compiler.max.memory}" fork="true"
+                   executable="${javac.exe}" encoding="UTF-8" includeantruntime="false">
+                <compilerarg line="${compiler.args.tests}"/>
+                <classpath refid="classpath.test"/>
+                <src path="@{srcdir}"/>
+                <patternset refid="ignored.files"/>
+            </javac>
+        </sequential>
+    </macrodef>
+
+    <target name="clean.tests" description="Delete compiled test classes">
+        <delete dir="${test.out.dir}"/>
+    </target>
+
+    <target name="compile.testfx" depends="fetch-libs" description="Compile Aspose.TestFx (test framework of Aspose.Foundation)">
+        <compile-tests srcdir="${basedir}/Aspose.Foundation/Aspose.TestFx"/>
+    </target>
+
+    <target name="compile.foundation.tests" depends="compile.testfx" description="Compile Aspose.Foundation.Tests">
+        <compile-tests srcdir="${basedir}/Aspose.Foundation/Aspose.Foundation.Tests"/>
+    </target>
+
+    <target name="compile.words.testfx" depends="compile.testfx" description="Compile Aspose.Words.TestFx">
+        <compile-tests srcdir="${basedir}/Aspose.Words.TestFx"/>
+    </target>
+
+    <target name="compile.words.tests" depends="compile.words.testfx" description="Compile Aspose.Words.Tests">
+        <compile-tests srcdir="${basedir}/Aspose.Words.Tests"/>
+    </target>
+
+    <!-- Tests of the MS library live next to it, in ${ms.dir}/Tests; they use Aspose.TestFx. -->
+    <target name="compile.ms.tests" depends="compile.testfx" description="Compile MS.Tests">
+        <compile-tests srcdir="${ms.dir}/Tests"/>
+    </target>
+
+    <!-- Expects the production classes to be built already (target "compile"). -->
+    <target name="compile.tests" depends="clean.tests, compile.foundation.tests, compile.words.tests, compile.ms.tests"
+            description="Compile all test modules"/>
+
+    <!-- ===== Running the tests ===== -->
+
+    <!-- The tests read their input documents and gold files from Aspose.Words FOSS for .NET, the tree this code is ported
+         from: its folders TestData, TestGold and Aspose.Foundation/TestData at the release this tree was ported from
+         (net.ref). The target fetch-test-data downloads exactly those folders into test-data/; -Dnet.dir=<path> points the
+         tests to another copy instead, for example a full clone. Gold files that differ in Java are in TestGoldJava.
+         Build the production classes and the tests with -Dms.flavour=debug: that compiles in the test-mode behaviour (the
+         predictable random generator, for example) which the gold files expect. -->
+    <property name="net.repo.url" value="https://github.com/aspose-words-foss/Aspose.Words-FOSS-for-.NET.git"/>
+    <!-- A tag (or commit) of that repository; moves with every release of this one. -->
+    <property name="net.ref" value="v26.3.0"/>
+    <property name="net.paths" value="TestData TestGold Aspose.Foundation/TestData"/>
+    <!-- The same folders for Git LFS, which would otherwise fetch the documents of the whole commit. -->
+    <property name="net.lfs.include" value="TestData/**,TestGold/**,Aspose.Foundation/TestData/**"/>
+    <property name="test.data.dir" location="${basedir}/test-data"/>
+    <property name="net.dir" location="${test.data.dir}"/>
+    <property name="test.suite" location="${basedir}/words-java.test.all.xml"/>
+    <property name="test.results.dir" location="${basedir}/test-output"/>
+
+    <!-- A shallow, sparse clone: only the commit net.ref (a few dozen MB without its Git LFS objects) is fetched, only the
+         folders in net.paths are checked out, and only their documents are downloaded from Git LFS. No blob filter on
+         purpose: in a blob-less clone Git LFS fetches every pointer file on its own, which takes very long. Running the
+         target again moves an existing test-data/ to another net.ref. -->
+    <target name="fetch-test-data" description="Download the test documents and gold files of Aspose.Words FOSS for .NET ${net.ref} into test-data/ (needs git and Git LFS)">
+        <exec executable="git" failonerror="true" outputproperty="git.lfs.version">
+            <arg line="lfs version"/>
+        </exec>
+        <mkdir dir="${test.data.dir}"/>
+        <available file="${test.data.dir}/.git" type="dir" property="test.data.cloned"/>
+        <exec executable="git" dir="${test.data.dir}" failonerror="true" unless:set="test.data.cloned">
+            <arg line="init --quiet"/>
+        </exec>
+        <exec executable="git" dir="${test.data.dir}" failonerror="true" unless:set="test.data.cloned">
+            <arg line="remote add origin ${net.repo.url}"/>
+        </exec>
+        <exec executable="git" dir="${test.data.dir}" failonerror="true" if:set="test.data.cloned">
+            <arg line="remote set-url origin ${net.repo.url}"/>
+        </exec>
+        <exec executable="git" dir="${test.data.dir}" failonerror="true">
+            <arg line="sparse-checkout set ${net.paths}"/>
+        </exec>
+        <exec executable="git" dir="${test.data.dir}" failonerror="true">
+            <arg line="fetch --depth 1 origin ${net.ref}"/>
+        </exec>
+        <!-- Check out without LFS content first, then fetch that content in one batch. -->
+        <exec executable="git" dir="${test.data.dir}" failonerror="true">
+            <env key="GIT_LFS_SKIP_SMUDGE" value="1"/>
+            <arg line="-c advice.detachedHead=false checkout --force FETCH_HEAD"/>
+        </exec>
+        <exec executable="git" dir="${test.data.dir}" failonerror="true">
+            <arg value="lfs"/>
+            <arg value="pull"/>
+            <arg value="--include=${net.lfs.include}"/>
+        </exec>
+        <echo message="Test data of ${net.repo.url} ${net.ref} is in ${test.data.dir}"/>
+    </target>
+
+    <target name="test" description="Run the test suite (after fetch-test-data, or with -Dnet.dir=a copy of Aspose.Words FOSS for .NET; build with -Dms.flavour=debug)">
+        <fail message="No TestData in ${net.dir}. Run the target fetch-test-data, or pass -Dnet.dir=&lt;a clone of Aspose.Words FOSS for .NET&gt;.">
+            <condition><not><available file="${net.dir}/TestData" type="dir"/></not></condition>
+        </fail>
+        <fail message="No compiled tests. Build the targets compile and compile.tests with -Dms.flavour=debug first.">
+            <condition><not><available file="${test.out.dir}" type="dir"/></not></condition>
+        </fail>
+        <!-- Foundation tests write next to their input, into Aspose.Foundation/TestOut, and expect its folders to exist. -->
+        <copy todir="${net.dir}/Aspose.Foundation/TestOut" includeEmptyDirs="true">
+            <fileset dir="${net.dir}/Aspose.Foundation/TestData"><type type="dir"/></fileset>
+        </copy>
+        <mkdir dir="${test.results.dir}/TestOut"/>
+        <mkdir dir="${test.results.dir}/TestOut.Foundation"/>
+        <dirname property="root.dir" file="${basedir}"/>
+        <java classname="org.testng.TestNG" fork="true" jvm="${jdk.home}/bin/java" dir="${basedir}" maxmemory="2g"
+              failonerror="false" resultproperty="test.exit">
+            <classpath>
+                <pathelement location="${test.out.dir}"/>
+                <pathelement location="${out.dir}"/>
+                <fileset dir="${ms.dir}/lib" includes="*.jar"/>
+                <fileset dir="${libs.dir}" includes="*.jar"/>
+            </classpath>
+            <jvmarg value="-Dfile.encoding=UTF-8"/>
+            <!-- The gold files were made with New Zealand English and the Auckland time zone. -->
+            <jvmarg value="-Duser.country=NZ"/>
+            <jvmarg value="-Duser.language=en"/>
+            <jvmarg value="-Duser.timezone=Pacific/Auckland"/>
+            <!-- Every folder explicitly: left alone, the test framework guesses them from the class path. -->
+            <sysproperty key="dir.root" value="${root.dir}${file.separator}"/>
+            <sysproperty key="dir.words-java" value="${basedir}${file.separator}"/>
+            <sysproperty key="dir.awnet" value="${net.dir}${file.separator}"/>
+            <sysproperty key="dir.test.out" value="${test.results.dir}${file.separator}TestOut${file.separator}"/>
+            <sysproperty key="dir.test.out.foundation" value="${test.results.dir}${file.separator}TestOut.Foundation${file.separator}"/>
+            <arg value="-d"/>
+            <arg value="${test.results.dir}"/>
+            <arg value="${test.suite}"/>
+        </java>
+        <echo message="TestNG exit code ${test.exit} (0: all passed). Results: ${test.results.dir}/index.html, testng-results.xml"/>
+    </target>
+
+    <target name="jar" depends="compile" description="Plain, unobfuscated jar of the production classes">
+        <mkdir dir="${lib.dir}"/>
+        <jar destfile="${lib.dir}/aspose-words-foss.jar" basedir="${out.dir}">
+            <manifest>
+                <attribute name="Implementation-Title" value="Aspose.Words FOSS for Java"/>
+                <attribute name="Implementation-Version" value="${version}"/>
+                <attribute name="Implementation-Vendor" value="Aspose Pty Ltd"/>
+            </manifest>
+        </jar>
+    </target>
+
+</project>

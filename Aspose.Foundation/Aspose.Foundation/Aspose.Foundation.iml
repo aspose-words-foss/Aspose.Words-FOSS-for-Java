@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <output url="file://$MODULE_DIR$/../../classes/production" />
+    <output-test url="file://$MODULE_DIR$/../../classes/test" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/Base" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Drawing" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Images" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Images/Filters" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/OpcPackaging" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Ss" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Ss/Property" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Crypto" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Collections" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Fonts" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Fonts/EmbeddedOpenType" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Fonts/EmbeddedOpenType/Ctf" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Fonts/EmbeddedOpenType/LzComp" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Fonts/Sfnt" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Fonts/TrueType" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Pal/JavaAdded" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Fonts/Woff" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Collections/Auto" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Collections/BidirectionalMaps" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/Charset" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/IO" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Warnings" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Xml" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Bidi" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Numbering" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Numbering/Textual" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Common" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Drawing/Fonts" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Fonts/Ps" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Images/Pal" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Images/Pal/PixelData" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Collections/Generic" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Pal/JavaAdded/iio" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Pal/JavaAdded/iio/reader" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Pal/JavaAdded/iio/writer" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Pal/JavaAdded/iio/reader/jpeg" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Pal/JavaAdded/iio/writer/tiff" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Common/Strings" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Common/Nullable" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Images/Jpeg" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Fonts/Ttc" isTestSource="false" packagePrefix="com.aspose" />
+      <sourceFolder url="file://$MODULE_DIR$/Generated/Aspose.EnumExtensionsGenerator/Aspose.EnumExtensionsGenerator.EnumExtensionsGenerator" isTestSource="false" packagePrefix="com.aspose" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="MS" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="library" name="BouncyCastle" level="project" />
+    <orderEntry type="library" name="sejda.imageio.webp" level="project" />
+    <orderEntry type="library" name="pngencoder-0.15.0" level="project" />
+    <orderEntry type="library" name="Twelvemonkeys" level="project" />
+  </component>
+</module>

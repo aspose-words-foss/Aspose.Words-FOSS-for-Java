@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <output url="file://$MODULE_DIR$/../classes/production" />
+    <output-test url="file://$MODULE_DIR$/../classes/test" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/src/debug">
+      <sourceFolder url="file://$MODULE_DIR$/src/debug" isTestSource="false" />
+    </content>
+    <content url="file://$MODULE_DIR$/src/main">
+      <sourceFolder url="file://$MODULE_DIR$/src/main" isTestSource="false" />
+    </content>
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="library" name="WoodstoxStAX" level="project" />
+  </component>
+</module>

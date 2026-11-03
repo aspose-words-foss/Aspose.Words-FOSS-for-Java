@@ -1,0 +1,144 @@
+// Copyright (c) 2001-2026 Aspose Pty Ltd. All Rights Reserved.
+// 20/06/2012 by Alexey Noskov
+
+package com.aspose.words;
+
+// ********* THIS FILE IS AUTO PORTED *********
+
+import com.aspose.ArgumentUtil;
+import com.aspose.StringToObjDictionary;
+
+
+/// <summary>
+/// Represents the scaling options of the axis.
+/// <para>To learn more, visit the <a href="https://docs.aspose.com/words/net/working-with-charts/">Working with Charts</a> documentation article.</para>
+/// </summary>
+public class AxisScaling implements IDmlExtensionListSource, Cloneable
+{
+    /// <summary>
+    /// Creates a clone of this object.
+    /// </summary>
+    AxisScaling deepClone()
+    {
+        AxisScaling lhs = (AxisScaling)memberwiseClone();
+        lhs.mGapWidth = mGapWidth.deepClone();
+        lhs.mExtensions = DmlExtensionListSource.cloneExtensions(mExtensions);
+        return lhs;
+    }
+
+    /// <summary>
+    /// Sets the <see cref="LogBase"/> property without checking input value.
+    /// <see cref="Type"/> of the scale is changed to <see cref="AxisScaleType.Logarithmic"/>.
+    /// </summary>
+    void setLogBaseWithoutCheck(double value)
+    {
+        mLogBase = value;
+        mType = AxisScaleType.LOGARITHMIC;
+    }
+
+    /// <summary>
+    /// Gets or sets scaling type of the axis.
+    /// </summary>
+    /// <remarks>
+    /// The <see cref="AxisScaleType.Linear"/> value is the only that is allowed in MS Office 2016 new charts.
+    /// </remarks>
+    public /*AxisScaleType*/int getType() { return mType; }
+    public void setType(/*AxisScaleType*/int value) { mType = value; }
+
+    /// <summary>
+    /// Gets or sets the logarithmic base for a logarithmic axis.
+    /// </summary>
+    /// <remarks>
+    /// <para>The property is not supported by MS Office 2016 new charts.</para>
+    /// <para>Valid range of a floating point value is greater than or equal to 2 and less than or 
+    /// equal to 1000. The property has effect only if <see cref="Type"/> is set to 
+    /// <see cref="AxisScaleType.Logarithmic"/>.</para>
+    /// <para>Setting this property sets the <see cref="Type"/> property to <see cref="AxisScaleType.Logarithmic"/>.
+    /// </para>
+    /// </remarks>
+    public double getLogBase() { return mLogBase; }
+    public void setLogBase(double value)
+    {
+        ArgumentUtil.checkRangeInclusive(value, 2.0, 1000.0, "value");
+        mLogBase = value;
+        mType = AxisScaleType.LOGARITHMIC;
+    }
+
+    /// <summary>
+    /// Gets or sets minimum value of the axis.
+    /// </summary>
+    /// <remarks>
+    /// The default value is "auto".
+    /// </remarks>
+    public AxisBound getMinimum() { return mMinimum != null ? mMinimum : AxisBound.AUTO; }
+    public void setMinimum(AxisBound value)
+    {
+        ArgumentUtil.checkNotNull(value, "value");
+        mMinimum = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum value of the axis.
+    /// </summary>
+    /// <remarks>
+    /// The default value is "auto".
+    /// </remarks>
+    public AxisBound getMaximum() { return mMaximum != null ? mMaximum : AxisBound.AUTO; }
+    public void setMaximum(AxisBound value)
+    {
+        ArgumentUtil.checkNotNull(value, "value");
+        mMaximum = value;
+    }
+
+    /// <summary>
+    /// Gets a flag indicating whether minimum value of the axis is defined explicitly.
+    /// </summary>
+    boolean getMinimumIsDefined() { return mMinimum != null; }
+
+    /// <summary>
+    /// Gets a flag indicating whether maximum value of the axis is defined explicitly.
+    /// </summary>
+    boolean getMaximumIsDefined() { return mMaximum != null; }
+
+    /// <summary>
+    /// Gets or sets the space between data points as a ratio of gap width over category width.
+    /// Valid range of a value is greater than or equal to zero.
+    /// </summary>
+    /// <dev>
+    /// Related to category axis only.
+    /// Supported by charts of the schema http://schemas.microsoft.com/office/drawing/2014/chartex.
+    /// </dev>
+    DoubleOrAutomatic getGapWidth() { return mGapWidth; }
+    void setGapWidth(DoubleOrAutomatic value) { mGapWidth = value; }
+
+    /*AxisOrientation*/int getOrientation() { return mOrientation; }
+    void setOrientation(/*AxisOrientation*/int value) { mOrientation = value; }
+
+    /// <summary>
+    /// Represents extLst: a CT_OfficeArtExtensionList ([ISO/IEC29500-1:2012] section A.4.1) element that specifies
+    /// the extension list in which all future extensions of element type ext is defined. 
+    ///  </summary>
+    /// <remarks>
+    /// Explicit implementation hides this from public.
+    /// </remarks>
+    @ReservedForInternalUse @Deprecated
+    public StringToObjDictionary<DmlExtension> /*IDmlExtensionListSource.*/getExtensions() { return mExtensions; }
+    @ReservedForInternalUse @Deprecated
+    public void /*IDmlExtensionListSource.*/setExtensions(StringToObjDictionary<DmlExtension> value) { mExtensions = value; }
+
+    private /*AxisScaleType*/int mType = AxisScaleType.LINEAR;
+    private double mLogBase = 10.0;
+    private AxisBound mMinimum;
+    private AxisBound mMaximum;
+    private DoubleOrAutomatic mGapWidth = DoubleOrAutomatic.asNull(0.0);
+    private /*AxisOrientation*/int mOrientation = AxisOrientation.MIN_MAX;
+    private StringToObjDictionary<DmlExtension> mExtensions;
+
+    //JAVA-added .Net MemberwiseClone emulation
+    protected Object memberwiseClone()
+    {
+        try { return clone(); }
+        catch (CloneNotSupportedException e) { throw new IllegalStateException(e); }
+    }
+}
+

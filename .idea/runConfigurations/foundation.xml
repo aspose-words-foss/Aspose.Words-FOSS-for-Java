@@ -1,0 +1,25 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="foundation" type="TestNG" singleton="true">
+    <module name="Aspose.Foundation.Tests" />
+    <shortenClasspath name="NONE" />
+    <option name="SUITE_NAME" value="" />
+    <option name="PACKAGE_NAME" value="com.aspose" />
+    <option name="MAIN_CLASS_NAME" value="" />
+    <option name="METHOD_NAME" value="" />
+    <option name="GROUP_NAME" value="" />
+    <option name="TEST_OBJECT" value="PACKAGE" />
+    <option name="VM_PARAMETERS" value="-Xmx1g -XX:+ClassUnloading -Dfile.encoding=UTF-8 -Duser.country=NZ -Duser.language=en -Duser.timezone=Pacific/Auckland -Ddir.words-java=$PROJECT_DIR$ -Ddir.root=$PROJECT_DIR$/.. -Ddir.awnet=$PROJECT_DIR$/test-data" />
+    <option name="PARAMETERS" value="" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Aspose.Foundation" />
+    <option name="OUTPUT_DIRECTORY" value="" />
+    <option name="TEST_SEARCH_SCOPE">
+      <value defaultName="singleModule" />
+    </option>
+    <option name="PROPERTIES_FILE" value="" />
+    <properties />
+    <listeners />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

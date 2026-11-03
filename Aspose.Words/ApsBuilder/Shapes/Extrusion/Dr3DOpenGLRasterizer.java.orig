@@ -1,0 +1,806 @@
+// Copyright (c) 2001-2020 Aspose Pty Ltd. All Rights Reserved.
+// 04/03/2017 by Dmitry Khudobin
+
+package com.aspose.words;
+
+// ********* THIS FILE IS AUTO PORTED *********
+
+import com.aspose.StringToObjDictionary;
+import com.aspose.ApsImage;
+<<<<<<< working copy
+import com.aspose.Dr3DShape;
+import com.aspose.Dr3DFaceEdge;
+import com.aspose.Dr3DFigure;
+import com.aspose.Dr3DVector;
+import com.aspose.GeometryUtil;
+import com.aspose.ms.System.Drawing.msPointF;
+import com.aspose.BitmapPal;
+import com.aspose.BitmapDataPal;
+import com.aspose.ms.System.IO.MemoryStream;
+import com.aspose.FileFormat;
+import com.aspose.ms.System.Drawing.msSizeF;
+import com.aspose.words.ref.Ref;
+
+
+/// <summary>
+/// Renders extrusion for objects using openTK library.
+/// </summary>
+class Dr3DOpenGLRasterizer
+{
+    Dr3DOpenGLRasterizer(StringToObjDictionary<Object> openGLGraphicsContextCache, /*ShapeType*/int shapeType, /*DmlBevelPresetType*/int bevelPresetType)
+    {
+        mOpenGLGraphicsContextCache = openGLGraphicsContextCache;
+        mShapeType = shapeType;
+        mBevelType = bevelPresetType;
+    }
+
+    void setTransformation(/*PointF*/long shift, float rotationAngleX, float rotationAngleY, float rotationAngleZ, float bevelTopHeight)
+    {
+        mShift = shift;
+        mRotationAngleX = rotationAngleX;
+        mRotationAngleY = rotationAngleY;
+        mRotationAngleZ = rotationAngleZ;
+        mBevelTopHeight = bevelTopHeight;
+    }
+
+    void setFaceFillRenderer(OpenGLFacesRenderer openGlFacesRenderer)
+    {
+        mOpenGLFacesRenderer = openGlFacesRenderer;
+    }
+
+    void setLightBuilder(IOpenGLLightBuilder openGLLightBuilder)
+    {
+        mOpenGLLightBuilder = openGLLightBuilder;
+    }
+
+    ApsImage render(Matrix4 projectionMatrix, Matrix4 modelViewMatrix, Dr3DShape dr3DShape) throws Exception
+    {
+        loadGraphicsContext();
+        initialize();
+
+        setProjectionMatrix(projectionMatrix);
+        setModelViewMatrix(modelViewMatrix);
+
+        setRotations();
+        GL.PushMatrix();
+
+        shiftToCenterCoordinates();
+
+        mOpenGLLightBuilder.setLight();
+
+        if (isNeedUseStencil(dr3DShape.getFrontFaces()[0]))
+            renderShapeUseStencil(dr3DShape);
+        else
+            renderShape(dr3DShape);
+
+        mOpenGLLightBuilder.disableLight();
+        mOpenGLFacesRenderer.deleteTexture();
+
+        renderPath(dr3DShape);
+
+        GL.PopMatrix();
+        GL.Flush();
+        GL.Finish();
+
+        ApsImage image = convertToApsImage();
+
+        return image;
+    }
+
+    private void renderPath(Dr3DShape dr3DShape)
+    {
+        if (dr3DShape.hasBackFaces())
+        {
+            renderFacesPath(dr3DShape.getBackFaces());
+
+            // Chosen empirically.
+            // We should not render the contour of the side faces for "round" shapes.
+            if (dr3DShape.getCount() < 45)
+                renderFacesPath(dr3DShape.getSideFaces());
+        }
+
+        renderFacesPath(dr3DShape.getFrontFaces());
+    }
+
+    private void renderFacesPath(Dr3DFaceEdge[] faces)
+    {
+        for (int i = 0; i < faces.length; i++)
+        {
+            Dr3DFaceEdge face = faces[i];
+            float offsetZ = getOffsetZ(face.getOrder() + 1, i, faces.length);
+            if (face.getPen() != null)
+                for (Dr3DFigure dr3DFigure : face.getChildren())
+                    mOpenGLFacesRenderer.renderPath(face.getPen(), face.getNormal(), dr3DFigure, offsetZ);
+        }
+    }
+
+    private void renderShape(Dr3DShape dr3DShape) throws Exception
+    {
+        if (dr3DShape.hasBackFaces())
+        {
+            renderFrontBackFaces(dr3DShape.getBackFaces(), dr3DShape.getBackNormal());
+            renderFaces(dr3DShape.getSideFaces());
+        }
+
+        renderBevel(dr3DShape);
+
+        renderFrontBackFaces(dr3DShape.getFrontFaces(), dr3DShape.getFrontNormal());
+    }
+
+    private void renderShapeUseStencil(Dr3DShape dr3DShape) throws Exception
+    {
+        Dr3DFaceEdge[] frontFaces = dr3DShape.getFrontFaces();
+        Dr3DVector frontNormal = dr3DShape.getFrontNormal();
+
+        GL.Enable(EnableCap.StencilTest);
+        GL.ClearStencil(0);
+        GL.Clear(ClearBufferMask.StencilBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
+
+        GL.StencilFunc(StencilFunction.Always, 0, 0);
+        GL.StencilOp(StencilOp.Keep, StencilOp.Incr, StencilOp.Incr);
+        renderFrontBackFaces(frontFaces, frontNormal);
+        GL.Disable(EnableCap.StencilTest);
+
+        GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
+
+        if (dr3DShape.hasBackFaces())
+            renderFaces(dr3DShape.getSideFaces());
+
+        renderBevel(dr3DShape);
+
+        GL.Enable(EnableCap.StencilTest);
+        GL.StencilFunc(StencilFunction.Equal, 1, 1);
+        GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Keep);
+        renderFrontBackFaces(frontFaces, frontNormal);
+        GL.Disable(EnableCap.StencilTest);
+    }
+
+    private void renderFaces(Dr3DFaceEdge[] faces) throws Exception
+    {
+        if (faces == null)
+            return;
+
+        // Identification of the figure "Heart".
+        // Temporary solution.
+        if (faces.length == 82)
+            for (int i = 0; i < faces.length; i++)
+            {
+                Dr3DFaceEdge face = faces[i];
+                Dr3DVector normalPrevios = null;
+                Dr3DVector normalNext = null;
+                if (i == 0)
+                {
+                    normalPrevios = faces[faces.length - 1].getNormal();
+                    normalNext = faces[i + 1].getNormal();
+                }
+
+                if (i == faces.length - 1)
+                {
+                    normalPrevios = faces[i - 1].getNormal();
+                    normalNext = faces[0].getNormal();
+                }
+
+                if (i != 0 && i != faces.length - 1)
+                {
+                    normalPrevios = faces[i - 1].getNormal();
+                    normalNext = faces[i + 1].getNormal();
+                }
+
+                for (int j = 0; j < face.getCount(); j++)
+                    mOpenGLFacesRenderer.renderFill(face.getBrush(), face.getNormal(), face.get(j), 0.0f, normalPrevios, normalNext);
+            }
+        else
+            for (int i = 0; i < faces.length; i++)
+            {
+                Dr3DFaceEdge frontFace = faces[i];
+                for (int j = 0; j < frontFace.getCount(); j++)
+                    mOpenGLFacesRenderer.renderFill(frontFace.getBrush(), frontFace.getNormal(), frontFace.get(j), 0.0f);
+            }
+    }
+
+    private void renderFrontBackFaces(Dr3DFaceEdge[] faces, Dr3DVector normal) throws Exception
+    {
+        for (int i = 0; i < faces.length; i++)
+        {
+            Dr3DFaceEdge face = faces[i];
+            float offsetZ = getOffsetZ(face.getOrder(), i, faces.length);
+            for (Dr3DFigure dr3DFigure : face.getChildren())
+                mOpenGLFacesRenderer.renderFill(face.getBrush(), normal, dr3DFigure, offsetZ);
+        }
+    }
+
+    private float getOffsetZ(int faceOrder, int faceNumber, int faceCount)
+    {
+        float offsetZ = faceOrder * M_OFFSET_Z;
+        if (faceNumber > 0 && faceNumber < faceCount - 1 && mBevelTopHeight > 0.0f)
+            offsetZ = mBevelTopHeight + 150.0f;
+        return offsetZ;
+    }
+
+    private void renderBevel(Dr3DShape dr3DShape) throws Exception
+    {
+        if (!dr3DShape.hasBevelFaces())
+            return;
+
+        if (mBevelType == DmlBevelPresetType.CIRCLE)
+        {
+            // The number of steps required to build a bevel.
+            // Defined by Dr3DFaceBevelBuilder.
+            final int STEPS_FOR_BEVEL = 12;
+            renderComplexBevel(dr3DShape, STEPS_FOR_BEVEL);
+        }
+        else
+            renderFaces(dr3DShape.getBevelFaces());
+    }
+
+    private void renderComplexBevel(Dr3DShape dr3DShape, int stepsForBevel) throws Exception
+    {
+        int figureNumber = 0;
+
+        Dr3DFaceEdge frontFace = dr3DShape.getFrontFaces()[0];
+        int figurePointsCount = frontFace.get(figureNumber++).getCount();
+
+        // The shape can consist a few figures (for example "Sun").
+        // dr3DShape.BevelFaces contains all the elements for building a bevel.
+        // First and Last are indices of the beginning and end
+        // of the bevel elements for a current figure.
+        int first = figurePointsCount;
+        int last = stepsForBevel * figurePointsCount - figurePointsCount;
+
+        Dr3DFaceEdge[] faces = dr3DShape.getBevelFaces();
+        for (int i = 0; i < faces.length; i++)
+        {
+            Dr3DFaceEdge face = faces[i];
+            Dr3DVector normalPrevios = null;
+            Dr3DVector normalNext = null;
+
+            if (i > last && figureNumber < frontFace.getCount())
+            {
+                first = last + figurePointsCount;
+                figurePointsCount = frontFace.get(figureNumber).getCount();
+                last = first + stepsForBevel * figurePointsCount - figurePointsCount;
+                ++figureNumber;
+            }
+
+            if (i >= first && i < last)
+            {
+                normalPrevios = faces[i - figurePointsCount].getNormal();
+                normalNext = faces[i + figurePointsCount].getNormal();
+            }
+
+            for (int j = 0; j < face.getCount(); j++)
+                mOpenGLFacesRenderer.renderFillForBevel(face.getBrush(), face.getNormal(), face.get(j), normalPrevios, normalNext);
+        }
+    }
+
+    private boolean isNeedUseStencil(Dr3DFaceEdge frontFace)
+    {
+        switch (mShapeType)
+        {
+            case ShapeType.ELLIPSE:
+            case ShapeType.ROUND_RECTANGLE:
+            case ShapeType.CLOUD_CALLOUT:
+            case ShapeType.SMILEY_FACE:
+                return false;
+        }
+
+        for (int i = 0; i < frontFace.getCount(); i++)
+        {
+            Dr3DFigure figure = frontFace.get(i);
+            if ((i > 0 && GeometryUtil.isPointInsideFigure(figure.get(0), frontFace.get(0)))
+                || (!GeometryUtil.isFigureConvex(figure) && figure.getCount() > 2))
+                return true;
+        }
+
+        return false;
+    }
+
+    private void loadGraphicsContext()
+    {
+        setResolutionForRenderingWindow();
+
+        IGraphicsContext context = (IGraphicsContext)mOpenGLGraphicsContextCache.get(GRAPHICS_CONTEXT_CACHE_KEY);
+        if (context == null)
+        {
+            GraphicsMode graphicsMode = new GraphicsMode(32, 16, 8);
+            INativeWindow window = new NativeWindow(
+                mWindowSize,
+                mWindowSize,
+                "",
+                GameWindowFlags.Default,
+                graphicsMode,
+                DisplayDevice.Default);
+
+            context = new GraphicsContext(graphicsMode, window.WindowInfo, true);
+            context.LoadAll();
+            mOpenGLGraphicsContextCache.set(GRAPHICS_CONTEXT_CACHE_KEY, context);
+        }
+    }
+
+    private void setResolutionForRenderingWindow()
+    {
+        // Window sizes in pixels. Constant 600 and 1045 was chosen empirically. 
+        // Constant 187 and 325 was chosen empirically.
+        Screen resolution = Screen.PrimaryScreen;
+        if (resolution.Bounds.Height >= 1080)
+        {
+            mWindowSize = 1045;
+            mImageScalingFactor = 325;
+        }
+        else
+        {
+            mWindowSize = 600;
+            mImageScalingFactor = 187;
+        }
+    }
+
+    private void initialize()
+    {
+        GL.Enable(EnableCap.Normalize);
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+        GL.Enable(EnableCap.DepthTest);
+
+        mOpenGLLightBuilder.initialize();
+
+        GL.ClearColor(mClearColor[0], mClearColor[1], mClearColor[2], mClearColor[3]);
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+    }
+
+    private void setProjectionMatrix(Matrix4 projectionMatrix)
+    {
+        GL.MatrixMode(MatrixMode.Projection);
+        GL.LoadIdentity();
+        Ref<> referenceToProjectionMatrix = new Ref<>(projectionMatrix);
+        GL.LoadMatrix(/*ref*/ referenceToProjectionMatrix);
+        projectionMatrix = referenceToProjectionMatrix.get();
+    }
+
+    private void setModelViewMatrix(Matrix4 modelViewMatrix)
+    {
+        GL.MatrixMode(MatrixMode.Modelview);
+        GL.LoadIdentity();
+        Ref<> referenceToModelViewMatrix = new Ref<>(modelViewMatrix);
+        GL.LoadMatrix(/*ref*/ referenceToModelViewMatrix);
+        modelViewMatrix = referenceToModelViewMatrix.get();
+    }
+
+    private void setRotations()
+    {
+        GL.Rotate(mRotationAngleZ, 0.0f, 0.0f, 1.0f);
+        GL.Rotate(mRotationAngleX, 1.0f, 0.0f, 0.0f);
+        GL.Rotate(mRotationAngleY, 0.0f, 1.0f, 0.0f);
+    }
+
+    private void shiftToCenterCoordinates()
+    {
+        GL.Translate(-(float)Math.ceil(msPointF.getX(mShift)), -(float)Math.ceil(msPointF.getY(mShift)), -mBevelTopHeight);
+    }
+
+    private ApsImage convertToApsImage() throws Exception
+    {
+        if (GraphicsContext.CurrentContext == null)
+            throw new NullPointerException("OpenGL graphics context cannot be null.");
+
+        byte[] imageBytes;
+        int scalingFactor = (int)Math.max(msPointF.getX(mShift), msPointF.getY(mShift)) / mImageScalingFactor;
+        int resultApsImageWidth;
+        int resultApsImageHeight;
+
+        BitmapPal bmp = new BitmapPal(mWindowSize, mWindowSize);
+        try /*JAVA: was using*/
+        {
+            BitmapDataPal data = bmp.lockBits();
+
+            GL.ReadPixels(0, 0, bmp.getWidth(), bmp.getHeight(), PixelFormat.Rgba, PixelType.UnsignedByte, data.getArgbData());
+            data.unlockBits();
+
+            resultApsImageWidth = bmp.getWidth() * scalingFactor;
+            resultApsImageHeight = bmp.getHeight() * scalingFactor;
+
+            MemoryStream memoryStream = new MemoryStream();
+            try /*JAVA: was using*/
+            {
+                bmp.save(memoryStream, FileFormat.PNG);
+                imageBytes = memoryStream.toArray();
+            }
+            finally { if (memoryStream != null) memoryStream.close(); }
+        }
+        finally { if (bmp != null) bmp.dispose(); }
+
+        // WORDSNET-19436 need to align the image in the center of the bounds of the shape from the Word document.
+        /*PointF*/long originForApsImage = msPointF.ctor(
+            msPointF.getX(mShift) - resultApsImageWidth / 2.0f,
+            msPointF.getY(mShift) - resultApsImageHeight / 2.0f);
+
+        ApsImage image = new ApsImage(
+            originForApsImage,
+            msSizeF.ctor(resultApsImageWidth, resultApsImageHeight),
+            imageBytes);
+
+        return image;
+    }
+
+    private /*PointF*/long mShift = msPointF.Empty;
+    private float mRotationAngleX;
+    private float mRotationAngleY;
+    private float mRotationAngleZ;
+    private /*final*/ float[] mClearColor = { 1.0f, 1.0f, 1.0f, 0.0f };
+    private int mWindowSize;
+    private int mImageScalingFactor;
+    private /*final*/ StringToObjDictionary<Object> mOpenGLGraphicsContextCache;
+    private OpenGLFacesRenderer mOpenGLFacesRenderer;
+    private IOpenGLLightBuilder mOpenGLLightBuilder;
+    private float mBevelTopHeight;
+    private /*final*/ /*ShapeType*/int mShapeType;
+    private /*DmlBevelPresetType*/int mBevelType;
+=======
+import opentk.Matrix4;
+import com.aspose.Dr3DShape;
+import opentk.graphics.opengl.GL;
+import com.aspose.Dr3DFaceEdge;
+import com.aspose.Dr3DVector;
+import opentk.graphics.opengl.EnableCap;
+import opentk.graphics.opengl.ClearBufferMask;
+import opentk.graphics.opengl.StencilFunction;
+import opentk.graphics.opengl.StencilOp;
+import com.aspose.Dr3DFigure;
+import com.aspose.GeometryUtil;
+import opentk.graphics.IGraphicsContext;
+import opentk.graphics.GraphicsMode;
+import opentk.INativeWindow;
+import opentk.NativeWindow;
+import opentk.GameWindowFlags;
+import opentk.DisplayDevice;
+import opentk.graphics.GraphicsContext;
+import opentk.graphics.opengl.BlendingFactorSrc;
+import opentk.graphics.opengl.BlendingFactorDest;
+import opentk.graphics.opengl.MatrixMode;
+import com.aspose.ms.System.Drawing.msPointF;
+import com.aspose.BitmapPal;
+import com.aspose.BitmapDataPal;
+import opentk.graphics.opengl.PixelFormat;
+import opentk.graphics.opengl.PixelType;
+import com.aspose.ms.System.IO.MemoryStream;
+import com.aspose.FileFormat;
+import com.aspose.ms.System.Drawing.msSizeF;
+import com.aspose.words.ref.Ref;
+
+
+/// <summary>
+/// Renders extrusion for objects using openTK library.
+/// </summary>
+class Dr3DOpenGLRasterizer
+{
+    Dr3DOpenGLRasterizer(StringToObjDictionary<Object> openGLGraphicsContextCache, /*ShapeType*/int shapeType)
+    {
+        mOpenGLGraphicsContextCache = openGLGraphicsContextCache;
+        mShapeType = shapeType;
+    }
+
+    void setTransformation(/*PointF*/long shift, float rotationAngleX, float rotationAngleY, float rotationAngleZ, float bevelTopHeight)
+    {
+        mShift = shift;
+        mRotationAngleX = rotationAngleX;
+        mRotationAngleY = rotationAngleY;
+        mRotationAngleZ = rotationAngleZ;
+        mBevelTopHeight = bevelTopHeight;
+    }
+
+    void setFaceFillRenderer(OpenGLFacesRenderer openGlFacesRenderer)
+    {
+        mOpenGLFacesRenderer = openGlFacesRenderer;
+    }
+
+    void setLightBuilder(IOpenGLLightBuilder openGLLightBuilder)
+    {
+        mOpenGLLightBuilder = openGLLightBuilder;
+    }
+
+    ApsImage render(Matrix4 projectionMatrix, Matrix4 modelViewMatrix, Dr3DShape dr3DShape) throws Exception
+    {
+        loadGraphicsContext();
+        initialize();
+
+        setProjectionMatrix(projectionMatrix);
+        setModelViewMatrix(modelViewMatrix);
+
+        setRotations();
+        GL.pushMatrix();
+
+        shiftToCenterCoordinates();
+
+        mOpenGLLightBuilder.setLight();
+
+        if (isNeedUseStencil(dr3DShape.getFrontFaces()[0]))
+            renderShapeUseStencil(dr3DShape);
+        else
+            renderShape(dr3DShape);
+
+        mOpenGLLightBuilder.disableLight();
+        mOpenGLFacesRenderer.deleteTexture();
+
+        renderPath(dr3DShape);
+
+        GL.popMatrix();
+        GL.flush();
+        GL.finish();
+
+        ApsImage image = convertToApsImage();
+
+        return image;
+    }
+
+    private void renderPath(Dr3DShape dr3DShape)
+    {
+        if (dr3DShape.hasBackFaces())
+        {
+            renderFacesPath(dr3DShape.getBackFaces());
+
+            // Chosen empirically.
+            // We should not render the contour of the side faces for "round" shapes.
+            if (dr3DShape.getCount() < 45)
+                renderFacesPath(dr3DShape.getSideFaces());
+        }
+
+        renderFacesPath(dr3DShape.getFrontFaces());
+    }
+
+    private void renderFacesPath(Dr3DFaceEdge[] faces)
+    {
+        for (Dr3DFaceEdge backFace : faces)
+            if (backFace.getPen() != null)
+                for (int i = 0; i < backFace.getCount(); i++)
+                    mOpenGLFacesRenderer.renderPath(backFace.getPen(), backFace.getNormal(), backFace.get(i), M_OFFSET_Z * (backFace.getOrder() + 1));
+    }
+
+    private void renderShape(Dr3DShape dr3DShape) throws Exception
+    {
+        if (dr3DShape.hasBackFaces())
+        {
+            renderFrontBackFaces(dr3DShape.getBackFaces(), dr3DShape.getBackNormal());
+            renderFaces(dr3DShape.getSideFaces());
+        }
+
+        renderBevel(dr3DShape);
+
+        renderFrontBackFaces(dr3DShape.getFrontFaces(), dr3DShape.getFrontNormal());
+    }
+
+    private void renderShapeUseStencil(Dr3DShape dr3DShape) throws Exception
+    {
+        Dr3DFaceEdge[] frontFaces = dr3DShape.getFrontFaces();
+        Dr3DVector frontNormal = dr3DShape.getFrontNormal();
+
+        GL.enable(EnableCap.STENCIL_TEST);
+        GL.clearStencil(0);
+        GL.clear(ClearBufferMask.STENCIL_BUFFER_BIT | ClearBufferMask.DEPTH_BUFFER_BIT | ClearBufferMask.COLOR_BUFFER_BIT);
+
+        GL.stencilFunc(StencilFunction.ALWAYS, 0, 0);
+        GL.stencilOp(StencilOp.KEEP, StencilOp.INCR, StencilOp.INCR);
+        renderFrontBackFaces(frontFaces, frontNormal);
+        GL.disable(EnableCap.STENCIL_TEST);
+
+        GL.clear(ClearBufferMask.DEPTH_BUFFER_BIT | ClearBufferMask.COLOR_BUFFER_BIT);
+
+        if (dr3DShape.hasBackFaces())
+            renderFaces(dr3DShape.getSideFaces());
+
+        renderBevel(dr3DShape);
+
+        GL.enable(EnableCap.STENCIL_TEST);
+        GL.stencilFunc(StencilFunction.EQUAL, 1, 1);
+        GL.stencilOp(StencilOp.KEEP, StencilOp.KEEP, StencilOp.KEEP);
+        renderFrontBackFaces(frontFaces, frontNormal);
+        GL.disable(EnableCap.STENCIL_TEST);
+    }
+
+    private void renderFaces(Dr3DFaceEdge[] faces) throws Exception
+    {
+        if (faces == null)
+            return;
+
+        // Identification of the figure "Heart".
+        // Temporary solution.
+        if (faces.length == 82)
+            for (int i = 0; i < faces.length; i++)
+            {
+                Dr3DFaceEdge face = faces[i];
+                Dr3DVector normalPrevios = null;
+                Dr3DVector normalNext = null;
+                if (i == 0)
+                {
+                    normalPrevios = faces[faces.length - 1].getNormal();
+                    normalNext = faces[i + 1].getNormal();
+                }
+
+                if (i == faces.length - 1)
+                {
+                    normalPrevios = faces[i - 1].getNormal();
+                    normalNext = faces[0].getNormal();
+                }
+
+                if (i != 0 && i != faces.length - 1)
+                {
+                    normalPrevios = faces[i - 1].getNormal();
+                    normalNext = faces[i + 1].getNormal();
+                }
+
+                for (int j = 0; j < face.getCount(); j++)
+                    mOpenGLFacesRenderer.renderFill(face.getBrush(), face.getNormal(), face.get(j), 0.0f, normalPrevios, normalNext);
+            }
+        else
+            for (int i = 0; i < faces.length; i++)
+            {
+                Dr3DFaceEdge frontFace = faces[i];
+                for (int j = 0; j < frontFace.getCount(); j++)
+                    mOpenGLFacesRenderer.renderFill(frontFace.getBrush(), frontFace.getNormal(), frontFace.get(j), 0.0f);
+            }
+    }
+
+    private void renderFrontBackFaces(Dr3DFaceEdge[] faces, Dr3DVector normal) throws Exception
+    {
+        for (Dr3DFaceEdge frontFace : faces)
+            for (int i = 0; i < frontFace.getCount(); i++)
+                mOpenGLFacesRenderer.renderFill(frontFace.getBrush(), normal, frontFace.get(i), frontFace.getOrder() * M_OFFSET_Z);
+    }
+
+    private void renderBevel(Dr3DShape dr3DShape) throws Exception
+    {
+        if (dr3DShape.hasBevelFaces())
+            renderFaces(dr3DShape.getBevelFaces());
+    }
+
+    private boolean isNeedUseStencil(Dr3DFaceEdge frontFace)
+    {
+        switch (mShapeType)
+        {
+            case ShapeType.ELLIPSE:
+            case ShapeType.ROUND_RECTANGLE:
+            case ShapeType.CLOUD_CALLOUT:
+            case ShapeType.SMILEY_FACE:
+                return false;
+        }
+       
+        for (int i = 0; i < frontFace.getCount(); i++)
+        {
+            Dr3DFigure figure = frontFace.get(i);
+            if ((i > 0 && GeometryUtil.isPointInsideFigure(figure.get(0), frontFace.get(0)))
+                || (!GeometryUtil.isFigureConvex(figure) && figure.getCount() > 2))
+                return true;
+        }
+
+        return false;
+    }
+
+    private void loadGraphicsContext()
+    {
+        IGraphicsContext context = (IGraphicsContext)mOpenGLGraphicsContextCache.get(GRAPHICS_CONTEXT_CACHE_KEY);
+        if (context == null)
+        {
+            GraphicsMode graphicsMode = new GraphicsMode(32, 16, 8);
+            INativeWindow window = new NativeWindow(
+                WINDOW_SIZE,
+                WINDOW_SIZE,
+                "",
+                GameWindowFlags.DEFAULT,
+                graphicsMode,
+                DisplayDevice.getDefault());
+
+            context = new GraphicsContext(graphicsMode, window.getWindowInfo());
+            context.loadAll();
+            mOpenGLGraphicsContextCache.set(GRAPHICS_CONTEXT_CACHE_KEY, context);
+        }
+    }
+
+    private void initialize()
+    {
+        GL.enable(EnableCap.NORMALIZE);
+        GL.enable(EnableCap.BLEND);
+        GL.blendFunc(BlendingFactorSrc.SRC_ALPHA, BlendingFactorDest.ONE_MINUS_SRC_ALPHA);
+        GL.enable(EnableCap.DEPTH_TEST);
+
+        mOpenGLLightBuilder.initialize();
+
+        GL.clearColor(mClearColor[0], mClearColor[1], mClearColor[2], mClearColor[3]);
+        GL.clear(ClearBufferMask.COLOR_BUFFER_BIT | ClearBufferMask.DEPTH_BUFFER_BIT);
+    }
+
+    private void setProjectionMatrix(Matrix4 projectionMatrix)
+    {
+        GL.matrixMode(MatrixMode.PROJECTION);
+        GL.loadIdentity();
+        Ref<Matrix4> referenceToProjectionMatrix = new Ref<Matrix4>(projectionMatrix);
+        GL.loadMatrix(/*ref*/ referenceToProjectionMatrix);
+        projectionMatrix = referenceToProjectionMatrix.get();
+    }
+
+    private void setModelViewMatrix(Matrix4 modelViewMatrix)
+    {
+        GL.matrixMode(MatrixMode.MODELVIEW);
+        GL.loadIdentity();
+        Ref<Matrix4> referenceToModelViewMatrix = new Ref<Matrix4>(modelViewMatrix);
+        GL.loadMatrix(/*ref*/ referenceToModelViewMatrix);
+        modelViewMatrix = referenceToModelViewMatrix.get();
+    }
+
+    private void setRotations()
+    {
+        GL.rotate(mRotationAngleZ, 0.0f, 0.0f, 1.0f);
+        GL.rotate(mRotationAngleX, 1.0f, 0.0f, 0.0f);
+        GL.rotate(mRotationAngleY, 0.0f, 1.0f, 0.0f);
+    }
+
+    private void shiftToCenterCoordinates()
+    {
+        GL.translate(-(float)Math.ceil(msPointF.getX(mShift)), -(float)Math.ceil(msPointF.getY(mShift)), -mBevelTopHeight);
+    }
+
+    private ApsImage convertToApsImage() throws Exception
+    {
+        if (GraphicsContext.getCurrentContext() == null)
+            throw new NullPointerException("OpenGL graphics context cannot be null.");
+
+        byte[] imageBytes;
+        int scalingFactor = (int)Math.max(msPointF.getX(mShift), msPointF.getY(mShift)) / IMAGE_SCALING_FACTOR;
+        int resultApsImageWidth;
+        int resultApsImageHeight;
+
+        BitmapPal bmp = new BitmapPal(WINDOW_SIZE, WINDOW_SIZE);
+        try /*JAVA: was using*/
+        {
+            BitmapDataPal data = bmp.lockBits();
+
+            GL.readPixels(0, 0, bmp.getWidth(), bmp.getHeight(), PixelFormat.RGBA, PixelType.UNSIGNED_BYTE, data.getArgbData());
+            data.unlockBits();
+
+            resultApsImageWidth = bmp.getWidth() * scalingFactor;
+            resultApsImageHeight = bmp.getHeight() * scalingFactor;
+
+            MemoryStream memoryStream = new MemoryStream();
+            try /*JAVA: was using*/
+            {
+                bmp.save(memoryStream, FileFormat.PNG);
+                imageBytes = memoryStream.toArray();
+            }
+            finally { if (memoryStream != null) memoryStream.close(); }
+        }
+        finally { if (bmp != null) bmp.dispose(); }
+
+        // WORDSNET-19436 need to align the image in the center of the bounds of the shape from the Word document.
+        /*PointF*/long originForApsImage = msPointF.ctor(
+            msPointF.getX(mShift) - resultApsImageWidth / 2.0f,
+            msPointF.getY(mShift) - resultApsImageHeight / 2.0f);
+
+        ApsImage image = new ApsImage(
+            originForApsImage,
+            msSizeF.ctor(resultApsImageWidth, resultApsImageHeight),
+            imageBytes);
+
+        return image;
+    }
+
+    private /*PointF*/long mShift = msPointF.Empty;
+    private float mRotationAngleX;
+    private float mRotationAngleY;
+    private float mRotationAngleZ;
+    private /*final*/ float[] mClearColor = { 1.0f, 1.0f, 1.0f, 0.0f };
+
+    // Window sizes in pixels. Constant 600 was chosen empirically. 
+    private static final int WINDOW_SIZE = 600;
+    // Constant 187 was chosen empirically.
+    private static final int IMAGE_SCALING_FACTOR = 187;
+    private /*final*/ StringToObjDictionary<Object> mOpenGLGraphicsContextCache;
+    private OpenGLFacesRenderer mOpenGLFacesRenderer;
+    private IOpenGLLightBuilder mOpenGLLightBuilder;
+    private float mBevelTopHeight;
+    private /*final*/ /*ShapeType*/int mShapeType;
+>>>>>>> merge rev
+
+    // Constant 1000.0f was chosen empirically.
+    // Need for elements at shapes were closer.
+    private static final float M_OFFSET_Z = 1000.0f;
+
+    private static final String GRAPHICS_CONTEXT_CACHE_KEY = "OpenGLGraphicsContext";
+}
+

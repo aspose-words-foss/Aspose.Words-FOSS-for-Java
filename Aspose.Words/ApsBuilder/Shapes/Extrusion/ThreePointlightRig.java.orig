@@ -1,0 +1,339 @@
+// Copyright (c) 2001-2020 Aspose Pty Ltd. All Rights Reserved.
+// 15/04/2019 by Dmitry Khudobin
+
+package com.aspose.words;
+
+// ********* THIS FILE IS AUTO PORTED *********
+
+import com.aspose.ms.System.Drawing.msPointF;
+<<<<<<< working copy
+import com.aspose.DrColorUtil;
+import com.aspose.DrColor;
+
+
+/// <summary>
+/// The class is responsible for the type of lighting "Three Points" for the 3D scene.
+/// </summary>
+class ThreePointlightRig
+{
+    public static void setThreePointLight(ExtrusionParameters extrusionParameters, float shapeDepth)
+    {
+        if (extrusionParameters.hasBevelTop())
+        {
+            switch (extrusionParameters.getBevelTopType())
+            {
+                case DmlBevelPresetType.CIRCLE:
+                    setThreePointLightForCircleBevel(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+                case DmlBevelPresetType.RELAXED_INSET:
+                    setThreePointLightForRelaxedInsetBevel(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+                case DmlBevelPresetType.ANGLE:
+                    setThreePointLightForAngleBevel(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+                case DmlBevelPresetType.CROSS:
+                    setThreePointLightForCrossBevel(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+                default:
+                    threepointLightDefault(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+            }
+        }
+        else
+        {
+            threepointLightDefault(extrusionParameters.getOrigin(), shapeDepth);
+        }
+    }
+
+    private static void setThreePointLightForCrossBevel(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] light0Position = { msPointF.getX(shapeCenter) * -1.5f, msPointF.getY(shapeCenter) * -3.0f, shapeDepth * 1.0f, 0.0f };
+        GL.Enable(EnableCap.Light0);
+        GL.Light(LightName.Light0, LightParameter.Ambient, M_BLACK_COLOR);
+        GL.Light(LightName.Light0, LightParameter.Diffuse, new float[] { 0.5f, 0.5f, 0.5f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Specular, new float[] { 0.5f, 0.5f, 0.5f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Position, light0Position);
+
+        float[] light1Position = { msPointF.getX(shapeCenter) * 0.5f, msPointF.getY(shapeCenter) * -0.5f, shapeDepth * 5.0f, 0.0f };
+        GL.Enable(EnableCap.Light1);
+        GL.Light(LightName.Light1, LightParameter.Ambient, new float[] { 0.0f, 0.0f, 0.0f, 1.0f });
+        GL.Light(LightName.Light1, LightParameter.Diffuse, new float[] { 1.0f, 1.0f, 1.0f, 1.0f });
+        GL.Light(LightName.Light1, LightParameter.Position, light1Position);
+
+        float[] light2Position = { msPointF.getX(shapeCenter) * -0.2f, msPointF.getY(shapeCenter) * 3.0f, shapeDepth * 0.0f, 0.0f };
+        GL.Enable(EnableCap.Light2);
+        GL.Light(LightName.Light2, LightParameter.Diffuse, M_WHITE_COLOR);
+        GL.Light(LightName.Light2, LightParameter.Specular, new float[] { 0.7f, 0.7f, 0.7f, 1.0f });
+        GL.Light(LightName.Light2, LightParameter.Position, light2Position);
+
+        float[] light3Position = { msPointF.getX(shapeCenter) * -2.5f, msPointF.getY(shapeCenter) * 0.5f, shapeDepth * 0.0f, 0.0f };
+        GL.Enable(EnableCap.Light3);
+        GL.Light(LightName.Light3, LightParameter.Diffuse, new float[] { 0.2f, 0.2f, 0.2f, 1.0f });
+        GL.Light(LightName.Light3, LightParameter.Specular, new float[] { 0.5f, 0.5f, 0.5f, 1.0f });
+        GL.Light(LightName.Light3, LightParameter.Position, light3Position);
+    }
+
+    private static void setThreePointLightForAngleBevel(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] light0Position = { msPointF.getX(shapeCenter) * -0.5f, msPointF.getY(shapeCenter) * -1.5f, shapeDepth * 1.0f, 0.0f };
+        GL.Enable(EnableCap.Light0);
+        GL.Light(LightName.Light0, LightParameter.Ambient, new float[] { 0.05f, 0.05f, 0.05f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Diffuse, M_BLACK_COLOR);
+        GL.Light(LightName.Light0, LightParameter.Specular, new float[] { 0.3f, 0.3f, 0.3f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Position, light0Position);
+
+        float[] light1Position = { msPointF.getX(shapeCenter) * 1.0f, msPointF.getY(shapeCenter) * -0.5f, shapeDepth * 5.0f, 1.0f };
+        GL.Enable(EnableCap.Light1);
+        GL.Light(LightName.Light1, LightParameter.Ambient, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.Light(LightName.Light1, LightParameter.Diffuse, M_WHITE_COLOR);
+        GL.Light(LightName.Light1, LightParameter.Specular, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.Light(LightName.Light1, LightParameter.Position, light1Position);
+
+        float[] light2Position = { msPointF.getX(shapeCenter) * -0.5f, msPointF.getY(shapeCenter) * 3.0f, shapeDepth * -1.5f, 0.0f };
+        GL.Enable(EnableCap.Light2);
+        GL.Light(LightName.Light2, LightParameter.Diffuse, M_WHITE_COLOR);
+        GL.Light(LightName.Light2, LightParameter.Specular, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.Light(LightName.Light2, LightParameter.Position, light2Position);
+
+        float[] light3Position = { msPointF.getX(shapeCenter) * -2.5f, msPointF.getY(shapeCenter) * -2.0f, shapeDepth * 0.0f, 0.0f };
+        GL.Enable(EnableCap.Light3);
+        GL.Light(LightName.Light3, LightParameter.Diffuse, new float[] { 0.4f, 0.4f, 0.4f, 1.0f });
+        GL.Light(LightName.Light3, LightParameter.Position, light3Position);
+    }
+
+    private static void setThreePointLightForRelaxedInsetBevel(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] light0Position = { msPointF.getX(shapeCenter) * -0.5f, msPointF.getY(shapeCenter) * -1.5f, shapeDepth * 2.0f, 0.0f };
+        GL.Enable(EnableCap.Light0);
+        GL.Light(LightName.Light0, LightParameter.Ambient, new float[] { 0.3f, 0.3f, 0.3f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Diffuse, M_WHITE_COLOR);
+        GL.Light(LightName.Light0, LightParameter.Specular, new float[] { 0.4f, 0.4f, 0.4f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Position, light0Position);
+    }
+
+    private static void setThreePointLightForCircleBevel(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] darkGrey = DrColorUtil.getBgraVector(DrColor.DARK_GRAY);
+
+        float[] light0Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * 0.0f, shapeDepth * 3.0f, 0.0f };
+        GL.Enable(EnableCap.Light0);
+        GL.Light(LightName.Light0, LightParameter.Ambient, new float[] { 0.2f, 0.2f, 0.2f, 0.1f });
+        GL.Light(LightName.Light0, LightParameter.Diffuse, new float[] { 0.6f, 0.6f, 0.6f, 0.1f });
+        GL.Light(LightName.Light0, LightParameter.Specular, M_BLACK_COLOR);
+        GL.Light(LightName.Light0, LightParameter.Position, light0Position);
+
+        float[] light1Position = { msPointF.getX(shapeCenter) * -1.0f, msPointF.getY(shapeCenter) * -2.0f, 0.0f, 0.0f };
+        GL.Enable(EnableCap.Light1);
+        GL.Light(LightName.Light1, LightParameter.Diffuse, darkGrey);
+        GL.Light(LightName.Light1, LightParameter.Specular, M_BLACK_COLOR);
+        GL.Light(LightName.Light1, LightParameter.Position, light1Position);
+
+        float[] light2Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * 4.0f, shapeDepth * -3.0f, 0.0f };
+        GL.Enable(EnableCap.Light2);
+        GL.Light(LightName.Light2, LightParameter.Diffuse, M_WHITE_COLOR);
+        GL.Light(LightName.Light2, LightParameter.Specular, M_BLACK_COLOR);
+        GL.Light(LightName.Light2, LightParameter.Position, light2Position);
+
+        // Light source for glare.
+        float[] light3Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * -1.0f, shapeDepth * 1.0f, 0.0f };
+        GL.Enable(EnableCap.Light3);
+        GL.Light(LightName.Light3, LightParameter.Ambient, M_BLACK_COLOR);
+        GL.Light(LightName.Light3, LightParameter.Diffuse, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.Light(LightName.Light3, LightParameter.Specular, new float[] { 0.5f, 0.5f, 0.5f, 1.0f });
+        GL.Light(LightName.Light3, LightParameter.Position, light3Position);
+    }
+
+    // Remove method when "Three point light" will be made for all bevels.
+    private static void threepointLightDefault(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] darkGrey = DrColorUtil.getBgraVector(DrColor.DARK_GRAY);
+
+        float[] light0Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * 0.0f, shapeDepth * 2.0f, 0.0f };
+        GL.Enable(EnableCap.Light0);
+        GL.Light(LightName.Light0, LightParameter.Ambient, new float[] { 0.2f, 0.2f, 0.2f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Diffuse, new float[] { 0.8f, 0.8f, 0.8f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Specular, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Position, light0Position);
+
+        float[] light1Position = { msPointF.getX(shapeCenter) * -1.0f, msPointF.getY(shapeCenter) * -2.0f, 0.0f, 0.0f };
+        GL.Enable(EnableCap.Light1);
+        GL.Light(LightName.Light1, LightParameter.Diffuse, darkGrey);
+        GL.Light(LightName.Light1, LightParameter.Specular, M_BLACK_COLOR);
+        GL.Light(LightName.Light1, LightParameter.Position, light1Position);
+
+        float[] light2Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * 4.0f, shapeDepth * -3.0f, 0.0f };
+        GL.Enable(EnableCap.Light2);
+        GL.Light(LightName.Light2, LightParameter.Diffuse, M_WHITE_COLOR);
+        GL.Light(LightName.Light2, LightParameter.Specular, M_BLACK_COLOR);
+        GL.Light(LightName.Light2, LightParameter.Position, light2Position);
+=======
+import opentk.graphics.opengl.GL;
+import opentk.graphics.opengl.EnableCap;
+import opentk.graphics.opengl.LightName;
+import opentk.graphics.opengl.LightParameter;
+import com.aspose.DrColorUtil;
+import com.aspose.DrColor;
+
+
+/// <summary>
+/// The class is responsible for the type of lighting "Three Points" for the 3D scene.
+/// </summary>
+class ThreePointlightRig
+{
+    public static void setThreePointLight(ExtrusionParameters extrusionParameters, float shapeDepth)
+    {
+        if (extrusionParameters.hasBevelTop())
+        {
+            switch (extrusionParameters.getBevelTopType())
+            {
+                case DmlBevelPresetType.CIRCLE:
+                    setThreePointLightForCircleBevel(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+                case DmlBevelPresetType.RELAXED_INSET:
+                    setThreePointLightForRelaxedInsetBevel(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+                case DmlBevelPresetType.ANGLE:
+                    setThreePointLightForAngleBevel(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+                case DmlBevelPresetType.CROSS:
+                    setThreePointLightForCrossBevel(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+                default:
+                    threepointLightDefault(extrusionParameters.getOrigin(), shapeDepth);
+                    break;
+            }
+        }
+        else
+        {
+            threepointLightDefault(extrusionParameters.getOrigin(), shapeDepth);
+        }
+    }
+
+    private static void setThreePointLightForCrossBevel(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] light0Position = { msPointF.getX(shapeCenter) * -1.5f, msPointF.getY(shapeCenter) * -3.0f, shapeDepth * 1.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_0);
+        GL.light(LightName.LIGHT_0, LightParameter.AMBIENT, M_BLACK_COLOR);
+        GL.light(LightName.LIGHT_0, LightParameter.DIFFUSE, new float[] { 0.5f, 0.5f, 0.5f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.SPECULAR, new float[] { 0.5f, 0.5f, 0.5f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.POSITION, light0Position);
+
+        float[] light1Position = { msPointF.getX(shapeCenter) * 0.5f, msPointF.getY(shapeCenter) * -0.5f, shapeDepth * 5.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_1);
+        GL.light(LightName.LIGHT_1, LightParameter.AMBIENT, new float[] { 0.0f, 0.0f, 0.0f, 1.0f });
+        GL.light(LightName.LIGHT_1, LightParameter.DIFFUSE, new float[] { 1.0f, 1.0f, 1.0f, 1.0f });
+        GL.light(LightName.LIGHT_1, LightParameter.POSITION, light1Position);
+
+        float[] light2Position = { msPointF.getX(shapeCenter) * -0.2f, msPointF.getY(shapeCenter) * 3.0f, shapeDepth * 0.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_2);
+        GL.light(LightName.LIGHT_2, LightParameter.DIFFUSE, M_WHITE_COLOR);
+        GL.light(LightName.LIGHT_2, LightParameter.SPECULAR, new float[] { 0.7f, 0.7f, 0.7f, 1.0f });
+        GL.light(LightName.LIGHT_2, LightParameter.POSITION, light2Position);
+
+        float[] light3Position = { msPointF.getX(shapeCenter) * -2.5f, msPointF.getY(shapeCenter) * 0.5f, shapeDepth * 0.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_3);
+        GL.light(LightName.LIGHT_3, LightParameter.DIFFUSE, new float[] { 0.2f, 0.2f, 0.2f, 1.0f });
+        GL.light(LightName.LIGHT_3, LightParameter.SPECULAR, new float[] { 0.5f, 0.5f, 0.5f, 1.0f });
+        GL.light(LightName.LIGHT_3, LightParameter.POSITION, light3Position);
+    }
+
+    private static void setThreePointLightForAngleBevel(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] light0Position = { msPointF.getX(shapeCenter) * -0.5f, msPointF.getY(shapeCenter) * -1.5f, shapeDepth * 1.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_0);
+        GL.light(LightName.LIGHT_0, LightParameter.AMBIENT, new float[] { 0.05f, 0.05f, 0.05f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.DIFFUSE, M_BLACK_COLOR);
+        GL.light(LightName.LIGHT_0, LightParameter.SPECULAR, new float[] { 0.3f, 0.3f, 0.3f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.POSITION, light0Position);
+
+        float[] light1Position = { msPointF.getX(shapeCenter) * 1.0f, msPointF.getY(shapeCenter) * -0.5f, shapeDepth * 5.0f, 1.0f };
+        GL.enable(EnableCap.LIGHT_1);
+        GL.light(LightName.LIGHT_1, LightParameter.AMBIENT, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.light(LightName.LIGHT_1, LightParameter.DIFFUSE, M_WHITE_COLOR);
+        GL.light(LightName.LIGHT_1, LightParameter.SPECULAR, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.light(LightName.LIGHT_1, LightParameter.POSITION, light1Position);
+
+        float[] light2Position = { msPointF.getX(shapeCenter) * -0.5f, msPointF.getY(shapeCenter) * 3.0f, shapeDepth * -1.5f, 0.0f };
+        GL.enable(EnableCap.LIGHT_2);
+        GL.light(LightName.LIGHT_2, LightParameter.DIFFUSE, M_WHITE_COLOR);
+        GL.light(LightName.LIGHT_2, LightParameter.SPECULAR, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.light(LightName.LIGHT_2, LightParameter.POSITION, light2Position);
+
+        float[] light3Position = { msPointF.getX(shapeCenter) * -2.5f, msPointF.getY(shapeCenter) * -2.0f, shapeDepth * 0.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_3);
+        GL.light(LightName.LIGHT_3, LightParameter.DIFFUSE, new float[] { 0.4f, 0.4f, 0.4f, 1.0f });
+        GL.light(LightName.LIGHT_3, LightParameter.POSITION, light3Position);
+    }
+
+    private static void setThreePointLightForRelaxedInsetBevel(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] light0Position = { msPointF.getX(shapeCenter) * -0.5f, msPointF.getY(shapeCenter) * -1.5f, shapeDepth * 2.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_0);
+        GL.light(LightName.LIGHT_0, LightParameter.AMBIENT, new float[] { 0.3f, 0.3f, 0.3f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.DIFFUSE, M_WHITE_COLOR);
+        GL.light(LightName.LIGHT_0, LightParameter.SPECULAR, new float[] { 0.4f, 0.4f, 0.4f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.POSITION, light0Position);
+    }
+
+    private static void setThreePointLightForCircleBevel(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] darkGrey = DrColorUtil.getBgraVector(DrColor.DARK_GRAY);
+
+        float[] light0Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * 0.0f, shapeDepth * 3.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_0);
+        GL.light(LightName.LIGHT_0, LightParameter.AMBIENT, new float[] { 0.2f, 0.2f, 0.2f, 0.1f });
+        GL.light(LightName.LIGHT_0, LightParameter.DIFFUSE, new float[] { 0.6f, 0.6f, 0.6f, 0.1f });
+        GL.light(LightName.LIGHT_0, LightParameter.SPECULAR, M_BLACK_COLOR);
+        GL.light(LightName.LIGHT_0, LightParameter.POSITION, light0Position);
+
+        float[] light1Position = { msPointF.getX(shapeCenter) * -1.0f, msPointF.getY(shapeCenter) * -2.0f, 0.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_1);
+        GL.light(LightName.LIGHT_1, LightParameter.DIFFUSE, darkGrey);
+        GL.light(LightName.LIGHT_1, LightParameter.SPECULAR, M_BLACK_COLOR);
+        GL.light(LightName.LIGHT_1, LightParameter.POSITION, light1Position);
+
+        float[] light2Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * 4.0f, shapeDepth * -3.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_2);
+        GL.light(LightName.LIGHT_2, LightParameter.DIFFUSE, M_WHITE_COLOR);
+        GL.light(LightName.LIGHT_2, LightParameter.SPECULAR, M_BLACK_COLOR);
+        GL.light(LightName.LIGHT_2, LightParameter.POSITION, light2Position);
+
+        // Light source for glare.
+        float[] light3Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * -1.0f, shapeDepth * 1.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_3);
+        GL.light(LightName.LIGHT_3, LightParameter.AMBIENT, M_BLACK_COLOR);
+        GL.light(LightName.LIGHT_3, LightParameter.DIFFUSE, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.light(LightName.LIGHT_3, LightParameter.SPECULAR, new float[] { 0.5f, 0.5f, 0.5f, 1.0f });
+        GL.light(LightName.LIGHT_3, LightParameter.POSITION, light3Position);
+    }
+
+    // Remove method when "Three point light" will be made for all bevels.
+    private static void threepointLightDefault(/*PointF*/long shapeCenter, float shapeDepth)
+    {
+        float[] darkGrey = DrColorUtil.getBgraVector(DrColor.DARK_GRAY);
+
+        float[] light0Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * 0.0f, shapeDepth * 2.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_0);
+        GL.light(LightName.LIGHT_0, LightParameter.AMBIENT, new float[] { 0.2f, 0.2f, 0.2f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.DIFFUSE, new float[] { 0.8f, 0.8f, 0.8f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.SPECULAR, new float[] { 0.1f, 0.1f, 0.1f, 1.0f });
+        GL.light(LightName.LIGHT_0, LightParameter.POSITION, light0Position);
+
+        float[] light1Position = { msPointF.getX(shapeCenter) * -1.0f, msPointF.getY(shapeCenter) * -2.0f, 0.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_1);
+        GL.light(LightName.LIGHT_1, LightParameter.DIFFUSE, darkGrey);
+        GL.light(LightName.LIGHT_1, LightParameter.SPECULAR, M_BLACK_COLOR);
+        GL.light(LightName.LIGHT_1, LightParameter.POSITION, light1Position);
+
+        float[] light2Position = { msPointF.getX(shapeCenter) * 0.0f, msPointF.getY(shapeCenter) * 4.0f, shapeDepth * -3.0f, 0.0f };
+        GL.enable(EnableCap.LIGHT_2);
+        GL.light(LightName.LIGHT_2, LightParameter.DIFFUSE, M_WHITE_COLOR);
+        GL.light(LightName.LIGHT_2, LightParameter.SPECULAR, M_BLACK_COLOR);
+        GL.light(LightName.LIGHT_2, LightParameter.POSITION, light2Position);
+>>>>>>> merge rev
+    }
+
+    private static /*final*/ float[] M_WHITE_COLOR = new float[] { 1.0f, 1.0f, 1.0f, 1.0f };
+    private static /*final*/ float[] M_BLACK_COLOR = new float[] { 0.0f, 0.0f, 0.0f, 1.0f };
+}
+

@@ -1,0 +1,140 @@
+// Copyright (c) 2001-2020 Aspose Pty Ltd. All Rights Reserved.
+// 08/11/2018 by Dmitry Khudobin
+
+package com.aspose.words;
+
+// ********* THIS FILE IS AUTO PORTED *********
+
+import com.aspose.DrColor;
+import com.aspose.DrColorUtil;
+<<<<<<< working copy
+
+
+/// <summary>
+/// Calculation of properties material for shape in 3d scene.
+/// </summary>
+class OpenGLShapeMaterialBuilder implements IOpenGLShapeMaterialBuilder
+{
+    OpenGLShapeMaterialBuilder(/*DmlPresetMaterialType*/int materialType, boolean isEnableMaterial, IWarningCallback warningCallback)
+    {
+        mMaterialType = materialType;
+        mIsEnableMaterial = isEnableMaterial;
+        mWarningCallback = warningCallback;
+
+        addWarnings();
+    }
+ 
+    public void setMaterial(DrColor shapeColor)
+    {
+        // Color conversion, sequence is important.
+        float[] faceColor = DrColorUtil.getBgraVector(shapeColor);
+
+        if (mIsEnableMaterial)
+        {
+            switch (mMaterialType)
+            {
+                case DmlPresetMaterialType.WARM_MATTE:
+                    warmMatte(faceColor);
+                    break;
+                default:
+                    default(faceColor);
+                    break;
+            }
+        }
+        else
+            GL.Color4(faceColor);
+    }
+
+    private void default(float[] baseColor)
+    {
+        GL.Material(MaterialFace.Front, MaterialParameter.Ambient, baseColor);
+        GL.Material(MaterialFace.Front, MaterialParameter.Diffuse, baseColor);
+    }
+
+    private void warmMatte(float[] baseColor)
+    {
+        // Color conversion, sequence is important.
+        float[] blackColor = DrColorUtil.getBgraVector(DrColor.BLACK);
+        float[] darkGrey = DrColorUtil.getBgraVector(DrColor.DARK_GRAY);
+
+        GL.Material(MaterialFace.Front, MaterialParameter.Specular, darkGrey);
+        GL.Material(MaterialFace.Front, MaterialParameter.Shininess, 8.0f);
+        GL.Material(MaterialFace.Front, MaterialParameter.Ambient, baseColor);
+        GL.Material(MaterialFace.Front, MaterialParameter.Emission, blackColor);
+        GL.Material(MaterialFace.Front, MaterialParameter.Diffuse, baseColor);
+=======
+import opentk.graphics.opengl.GL;
+import opentk.graphics.opengl.MaterialFace;
+import opentk.graphics.opengl.MaterialParameter;
+
+
+/// <summary>
+/// Calculation of properties material for shape in 3d scene.
+/// </summary>
+class OpenGLShapeMaterialBuilder implements IOpenGLShapeMaterialBuilder
+{
+    OpenGLShapeMaterialBuilder(/*DmlPresetMaterialType*/int materialType, boolean isEnableMaterial, IWarningCallback warningCallback)
+    {
+        mMaterialType = materialType;
+        mIsEnableMaterial = isEnableMaterial;
+        mWarningCallback = warningCallback;
+
+        addWarnings();
+    }
+ 
+    public void setMaterial(DrColor shapeColor)
+    {
+        // Color conversion, sequence is important.
+        float[] faceColor = DrColorUtil.getBgraVector(shapeColor);
+
+        if (mIsEnableMaterial)
+        {
+            switch (mMaterialType)
+            {
+                case DmlPresetMaterialType.WARM_MATTE:
+                    warmMatte(faceColor);
+                    break;
+                default:
+                    defaultMaterial(faceColor);
+                    break;
+            }
+        }
+        else
+            GL.color4(faceColor);
+    }
+
+    private void defaultMaterial(float[] baseColor)
+    {
+        GL.material(MaterialFace.FRONT, MaterialParameter.AMBIENT, baseColor);
+        GL.material(MaterialFace.FRONT, MaterialParameter.DIFFUSE, baseColor);
+    }
+
+    private void warmMatte(float[] baseColor)
+    {
+        // Color conversion, sequence is important.
+        float[] blackColor = DrColorUtil.getBgraVector(DrColor.BLACK);
+        float[] darkGrey = DrColorUtil.getBgraVector(DrColor.DARK_GRAY);
+
+        GL.material(MaterialFace.FRONT, MaterialParameter.SPECULAR, darkGrey);
+        GL.material(MaterialFace.FRONT, MaterialParameter.SHININESS, 8.0f);
+        GL.material(MaterialFace.FRONT, MaterialParameter.AMBIENT, baseColor);
+        GL.material(MaterialFace.FRONT, MaterialParameter.EMISSION, blackColor);
+        GL.material(MaterialFace.FRONT, MaterialParameter.DIFFUSE, baseColor);
+>>>>>>> merge rev
+    }
+
+    private void addWarnings()
+    {
+        if (mIsEnableMaterial && mMaterialType != DmlPresetMaterialType.WARM_MATTE)
+            WarningUtil.warn(
+                mWarningCallback,
+                WarningType.MINOR_FORMATTING_LOSS_CATEGORY,
+                WarningSource.SHAPES,
+                "Unsupported material type for shape.");
+    }
+
+    private /*final*/ /*DmlPresetMaterialType*/int mMaterialType;
+    private /*final*/ boolean mIsEnableMaterial;
+    private /*final*/ IWarningCallback mWarningCallback;
+}
+

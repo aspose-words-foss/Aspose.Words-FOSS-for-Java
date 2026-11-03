@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="sejda.imageio.webp">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/webp-imageio-0.1.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

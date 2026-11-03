@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+<!--Runs all tests: everything but the single-threaded group in parallel, then the single-threaded group.
+    The parallel part is limited to four threads: the ported code keeps some static state, and more threads shake out races
+    that are not defects of the product under test. -->
+<!--TestNG finds the tests using package names. Single-thread tests are extracted using group names.-->
+<!--Developer should manually update package names and single-thread group names only.-->
+
+<suite name="Aspose Tests" verbose="2" allow-return-values="true" configfailurepolicy="continue">
+
+    <!--Run all but single-threaded tests in parallel mode.-->
+    <test name="Parallel" parallel="classes" thread-count="4">
+       <groups>
+           <run>
+               <exclude name="SingleThreadGroup"/>
+           </run>
+       </groups>
+       <packages>
+	       <package name="com.aspose" />
+           <!--A package entry does not include sub-packages: every package that has tests is listed.-->
+           <package name="com.aspose.ms" />
+           <package name="com.aspose.ms.System.Globalization" />
+           <package name="com.aspose.ms.System.Text" />
+           <package name="com.aspose.ms.java.IO" />
+           <package name="com.aspose.ms.java.nativeutils" />
+           <package name="com.aspose.ms.java.windows" />
+		   <package name="com.aspose.words" />
+       </packages>
+    </test>
+
+    <!--Run single-threaded tests.-->
+    <test name="Single Threaded" parallel="false">
+       <groups>
+          <run>
+               <include name="SingleThreadGroup"/>
+          </run>
+       </groups>
+       <packages>
+            <package name="com.aspose" />
+           <!--A package entry does not include sub-packages: every package that has tests is listed.-->
+           <package name="com.aspose.ms" />
+           <package name="com.aspose.ms.System.Globalization" />
+           <package name="com.aspose.ms.System.Text" />
+           <package name="com.aspose.ms.java.IO" />
+           <package name="com.aspose.ms.java.nativeutils" />
+           <package name="com.aspose.ms.java.windows" />
+		   <package name="com.aspose.words" />
+       </packages>
+    </test>
+</suite>
