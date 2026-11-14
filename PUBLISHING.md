@@ -30,6 +30,9 @@ engine's own version.
 The jar also carries this project's `LICENSE` and `THIRD-PARTY-NOTICES.md` under `META-INF/aspose-words-foss/`. The Apache-2.0
 `META-INF/LICENSE` at the root of the jar is the bundled Woodstox's own licence text.
 
+The workflows scan the tree for PGP key blocks and stop when they find one. The scan skips `libs-internal-tools/ant/KEYS`, which
+only holds public keys; a key block in any other file still stops the job.
+
 ## GitHub Release
 
 Each release also attaches the deployed jar, the sources and javadoc jars, their `.asc` signatures
