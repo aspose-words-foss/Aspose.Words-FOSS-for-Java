@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.aspose</groupId>
+  <artifactId>aspose-words-foss</artifactId>
+  <version>26.3.0</version>
+  <packaging>jar</packaging>
+
+  <name>Aspose.Words FOSS for Java</name>
+  <description>Open-source (MIT) Aspose.Words engine for Java: create, read, edit and convert DOCX, Markdown and text documents.</description>
+  <url>https://products.aspose.org/words/java/</url>
+
+  <licenses>
+    <license><name>MIT License</name><url>https://opensource.org/licenses/MIT</url><distribution>repo</distribution></license>
+  </licenses>
+  <developers>
+    <developer><name>Aspose</name><organization>Aspose Pty Ltd</organization><organizationUrl>https://www.aspose.com/</organizationUrl></developer>
+  </developers>
+  <scm>
+    <url>https://github.com/aspose-words-foss/Aspose.Words-FOSS-for-Java</url>
+    <connection>scm:git:https://github.com/aspose-words-foss/Aspose.Words-FOSS-for-Java.git</connection>
+    <developerConnection>scm:git:https://github.com/aspose-words-foss/Aspose.Words-FOSS-for-Java.git</developerConnection>
+  </scm>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>2026-11-03T07:19:46Z</project.build.outputTimestamp>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
+  </properties>
+
+  <dependencies>
+    <dependency><groupId>org.codehaus.woodstox</groupId><artifactId>stax2-api</artifactId><version>4.2.1</version></dependency>
+    <dependency><groupId>com.twelvemonkeys.common</groupId><artifactId>common-lang</artifactId><version>3.12.0</version></dependency>
+    <dependency><groupId>com.twelvemonkeys.common</groupId><artifactId>common-io</artifactId><version>3.12.0</version></dependency>
+    <dependency><groupId>com.twelvemonkeys.common</groupId><artifactId>common-image</artifactId><version>3.12.0</version></dependency>
+    <dependency><groupId>com.twelvemonkeys.imageio</groupId><artifactId>imageio-core</artifactId><version>3.12.0</version></dependency>
+    <dependency><groupId>com.twelvemonkeys.imageio</groupId><artifactId>imageio-metadata</artifactId><version>3.12.0</version></dependency>
+    <dependency><groupId>com.twelvemonkeys.imageio</groupId><artifactId>imageio-tiff</artifactId><version>3.12.0</version></dependency>
+    <dependency><groupId>com.twelvemonkeys.imageio</groupId><artifactId>imageio-webp</artifactId><version>3.12.0</version></dependency>
+    <dependency><groupId>org.sejda.imageio</groupId><artifactId>webp-imageio</artifactId><version>0.1.6</version></dependency>
+    <dependency><groupId>com.pngencoder</groupId><artifactId>pngencoder</artifactId><version>0.15.0</version></dependency>
+  </dependencies>
+
+  <build>
+    <sourceDirectory>Aspose.Words</sourceDirectory>
+    <resources>
+      <resource><directory>Aspose.Words/Resources</directory></resource>
+      <resource><directory>Aspose.Foundation/Aspose.Foundation/Resources</directory></resource>
+      <resource><directory>ms/src/main/com/aspose/words/resources</directory><targetPath>com/aspose/words/resources</targetPath></resource>
+    </resources>
+    <plugins>
+      <!-- Bundle prebuilt jars: unzip into target/classes BEFORE compile (the compile classpath always starts with
+           the output directory). Fails closed on Git-LFS pointer text. No dependency on, install-file of or shade of
+           the bundled jars, so the published POM is this POM. -->
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId><version>3.1.0</version>
+        <executions><execution><id>bundle-prebuilt-jars</id><phase>generate-resources</phase><goals><goal>run</goal></goals>
+          <configuration><target>
+            <fail message="The bundled jars are Git-LFS pointer text, not binaries: check out with Git LFS (lfs: true).">
+              <condition><or>
+                <length file="${project.basedir}/ms/lib/woodstox-core-6.5.2-aspose.jar" length="100000" when="less"/>
+                <length file="${project.basedir}/ms/lib/bc-fips.jar" length="100000" when="less"/>
+              </or></condition>
+            </fail>
+            <mkdir dir="${project.build.outputDirectory}"/>
+            <unzip src="${project.basedir}/ms/lib/woodstox-core-6.5.2-aspose.jar" dest="${project.build.outputDirectory}">
+              <patternset>
+                <exclude name="META-INF/MANIFEST.MF"/>
+                <exclude name="META-INF/maven/**"/>
+                <exclude name="META-INF/services/javax.xml.stream.XMLInputFactory"/>
+                <exclude name="META-INF/services/javax.xml.stream.XMLOutputFactory"/>
+                <exclude name="META-INF/services/javax.xml.stream.XMLEventFactory"/>
+              </patternset>
+            </unzip>
+            <unzip src="${project.basedir}/ms/lib/bc-fips.jar" dest="${project.build.outputDirectory}">
+            </unzip>
+          </target></configuration></execution></executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId><artifactId>build-helper-maven-plugin</artifactId><version>3.6.0</version>
+        <executions><execution><id>add-roots</id><phase>generate-sources</phase><goals><goal>add-source</goal></goals>
+          <configuration><sources>
+            <source>ms/src/main</source>
+            <source>ms/src/release</source>
+            <source>Aspose.Foundation/Aspose.Foundation</source>
+          </sources></configuration></execution></executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version>
+        <configuration>
+          <source>1.7</source><target>1.7</target><encoding>UTF-8</encoding><fork>true</fork>
+          <meminitial>512m</meminitial><maxmem>1500m</maxmem><showWarnings>false</showWarnings><debug>true</debug>
+          <compilerArgs><arg>-Xmaxerrs</arg><arg>100000</arg><arg>-Xmaxwarns</arg><arg>0</arg></compilerArgs>
+          <excludes><exclude>**/module-info.java</exclude><exclude>Resources/**</exclude><exclude>package-info.java</exclude></excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId><version>3.4.1</version>
+        <configuration><archive>
+          <addMavenDescriptor>false</addMavenDescriptor>
+          <manifestEntries>
+            <Bundled-Dependencies>org.bouncycastle:bc-fips:2.0.0;bcutil-fips:2.0.3;bcpkix-fips:2.0.7, com.fasterxml.woodstox:woodstox-core:6.5.2-aspose</Bundled-Dependencies>
+            <Implementation-Title>Aspose.Words FOSS for Java</Implementation-Title>
+            <Implementation-Vendor>Aspose Pty Ltd</Implementation-Vendor>
+            <Implementation-Version>${project.version}</Implementation-Version>
+            <Upstream-Source-Commit>ac299db8593da38cd591dece70fcaab425c98de6</Upstream-Source-Commit>
+          </manifestEntries>
+        </archive></configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId><version>3.4.0</version>
+        <executions><execution><id>attach-sources</id><goals><goal>jar-no-fork</goal></goals></execution></executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId><version>3.12.0</version>
+        <configuration><outputDirectory>${project.build.directory}/apidocs</outputDirectory><failOnError>false</failOnError><quiet>true</quiet><additionalOptions><additionalOption>-Xdoclint:none</additionalOption></additionalOptions></configuration>
+        <executions><execution><id>attach-javadocs</id><goals><goal>jar</goal></goals></execution></executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-gpg-plugin</artifactId><version>3.2.8</version>
+        <configuration><keyname>E176D5CBCA1DCC62</keyname><passphraseEnvName>GPG_PASSPHRASE</passphraseEnvName></configuration>
+        <executions><execution><id>sign-artifacts</id><phase>verify</phase><goals><goal>sign</goal></goals></execution></executions>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.central</groupId><artifactId>central-publishing-maven-plugin</artifactId><version>0.11.0</version><extensions>true</extensions>
+        <configuration><publishingServerId>central</publishingServerId><autoPublish>true</autoPublish><waitUntil>published</waitUntil></configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
