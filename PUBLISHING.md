@@ -5,8 +5,11 @@ Coordinates: `org.aspose:aspose-words-foss:26.3.0` (the version is stamped only 
 ## Build
 
 ```
-mvn -B clean verify -DskipTests
+mvn -B clean verify -Dgpg.skip=true -DskipTests
 ```
+
+`-Dgpg.skip=true` builds without signing. The pom signs the jars at `verify` with the Aspose FOSS release key, which only
+the release workflow holds; without that flag the build stops with `No secret key`.
 
 The build needs a **Git LFS** checkout (`git lfs pull`): two prebuilt jars in `ms/lib` and 26 resource files are LFS
 objects. The pom fails the build at `generate-resources` when a bundled jar is LFS pointer text.
@@ -17,10 +20,21 @@ The jar contains this repository's compiled classes **plus two prebuilt librarie
 - `ms/lib/woodstox-core-6.5.2-aspose.jar`
 - `ms/lib/bc-fips.jar`
 
-`org.bouncycastle:bc-fips:2.0.0;bcutil-fips:2.0.3;bcpkix-fips:2.0.7, com.fasterxml.woodstox:woodstox-core:6.5.2-aspose` is recorded in the manifest (`Bundled-Dependencies`) for scanners,
-which cannot see bundled classes in a dependency tree. The bundled Bouncy Castle FIPS jar is **not the certified
-FIPS 140 module**. The engine in this package is the upstream snapshot `ac299db8593da38cd591dece70fcaab425c98de6`
-and its `BuildVersionInfo.getVersion()` reports the engine's own version.
+Dependency scanners cannot see classes bundled inside a jar, so the manifest lists them in `Bundled-Dependencies`:
+`org.bouncycastle:bc-fips:2.0.0;bcutil-fips:2.0.3;bcpkix-fips:2.0.7, com.fasterxml.woodstox:woodstox-core:6.5.2-aspose`.
+
+The bundled Bouncy Castle FIPS jar is **not the certified FIPS 140 module**. The engine in this package is the upstream
+snapshot `ac299db8593da38cd591dece70fcaab425c98de6` and its `BuildVersionInfo.getVersion()` reports the
+engine's own version.
+
+The jar also carries this project's `LICENSE` and `THIRD-PARTY-NOTICES.md` under `META-INF/aspose-words-foss/`. The Apache-2.0
+`META-INF/LICENSE` at the root of the jar is the bundled Woodstox's own licence text.
+
+## GitHub Release
+
+Each release also attaches the deployed jar, the sources and javadoc jars, their `.asc` signatures
+and a `SHA256SUMS` file to the GitHub Release. Maven Central is the source of truth; the attached files are a
+convenience copy of the same build.
 
 ## Runtime dependencies (ordinary Maven dependencies)
 
