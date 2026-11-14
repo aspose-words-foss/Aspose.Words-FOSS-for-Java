@@ -155,6 +155,12 @@ jobs:
           done
           echo "All 3 jars present."
 
+      # The jar is a reproducible build: this hash must equal the one printed by the same build on any other machine.
+      - name: Record jar checksums
+        run: |
+          VER="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          sha256sum "target/aspose-words-foss-${VER}.jar" "target/aspose-words-foss-${VER}-sources.jar" "target/aspose-words-foss-${VER}-javadoc.jar"
+
       - name: Verify clean working tree
         run: |
           git diff --exit-code
@@ -464,7 +470,7 @@ jobs:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn -B deploy -DskipTests
+        run: mvn -B clean deploy -DskipTests
 
       - name: Record Maven Central publish marker
         if: needs.guard.outputs.already_published != 'true'
@@ -501,6 +507,30 @@ jobs:
               --repo "${{ github.repository }}" --clobber && break
             echo "gh release upload attempt $i failed, retrying..."; sleep 5
           done
+
+      # A convenience copy of the build that was just deployed: it is taken from the same target/ directory, so the
+      # signatures are the ones Central received (every Maven run signs afresh, so an earlier build's .asc files
+      # would differ). Central is the source of truth, so a failure here must not stop the Central polling or the
+      # incident issue below: the step is allowed to fail and only warns.
+      - name: Attach jars, signatures and checksums to the GitHub Release
+        if: needs.guard.outputs.already_published != 'true'
+        continue-on-error: true
+        run: |
+          TAG="${{ needs.guard.outputs.tag }}"
+          VER="${{ needs.guard.outputs.version }}"
+          cd target
+          sha256sum "aspose-words-foss-${VER}.jar" "aspose-words-foss-${VER}-sources.jar" "aspose-words-foss-${VER}-javadoc.jar" > SHA256SUMS
+          cat SHA256SUMS
+          for i in 1 2 3; do
+            gh release upload "$TAG" \
+              "aspose-words-foss-${VER}.jar" "aspose-words-foss-${VER}.jar.asc" \
+              "aspose-words-foss-${VER}-sources.jar" "aspose-words-foss-${VER}-sources.jar.asc" \
+              "aspose-words-foss-${VER}-javadoc.jar" "aspose-words-foss-${VER}-javadoc.jar.asc" \
+              SHA256SUMS --repo "${{ github.repository }}" --clobber && exit 0
+            echo "gh release upload attempt $i failed, retrying..."; sleep 5
+          done
+          echo "::warning::The release assets could not be attached; the artifact on Maven Central is not affected."
+          exit 1
 
       - name: Skip notice (already published by a prior run)
         if: needs.guard.outputs.already_published == 'true'
