@@ -135,7 +135,7 @@ jobs:
       - name: Secret scan
         run: |
           git grep -nI -E "BEGIN PGP PRIVATE KEY BLOCK|BEGIN PGP PUBLIC KEY BLOCK" \
-            -- ':!.github/workflows/maven-central-release.yml' \
+            -- ':!.github/workflows/maven-central-release.yml' ':!libs-internal-tools/ant/KEYS' \
             && { echo "PGP key block found — aborting"; exit 1; } || true
 
       - name: Build (gpg.skip=true)
@@ -233,7 +233,7 @@ jobs:
         shell: powershell
         run: |
           $pgp = & git grep -nI -E 'BEGIN PGP PRIVATE KEY BLOCK|BEGIN PGP PUBLIC KEY BLOCK' `
-            -- ':(exclude).github/workflows/maven-central-release.yml' 2>&1
+            -- ':(exclude).github/workflows/maven-central-release.yml' ':(exclude)libs-internal-tools/ant/KEYS' 2>&1
           if ($pgp) { Write-Error 'PGP key block found -- aborting'; exit 1 }
           Write-Host 'Secret scan: CLEAN'
           exit 0
@@ -409,7 +409,7 @@ jobs:
       - name: Secret scan
         run: |
           git grep -nI -E "BEGIN PGP PRIVATE KEY BLOCK|BEGIN PGP PUBLIC KEY BLOCK" \
-            -- ':!.github/workflows/maven-central-release.yml' \
+            -- ':!.github/workflows/maven-central-release.yml' ':!libs-internal-tools/ant/KEYS' \
             && { echo "PGP key block found — aborting"; exit 1; } || true
 
       # Idempotent: whichever run wins the concurrency race creates the
