@@ -39,3 +39,4 @@ harfbuzz-shaping-engine-dll/v15
 !/foss-port/config-foss/CsPorterReport.xml
 # Third-party jars downloaded by the Ant target fetch-libs.
 /libs/
+target/
