@@ -86,7 +86,19 @@ The engine underneath already knows how to handle far more (see [the story](#the
 
 ## Getting started
 
-A Maven package is not published yet. Either download the jar, alone or with its dependencies, from [Releases](../../releases), or build it from source. To build it you need a JDK 8 (the build is verified with it) and `git` with [Git LFS](https://git-lfs.com). The repository keeps its binary files in Git LFS: the bundled Apache Ant, the two patched jars, a font and textures. Without Git LFS a clone gets placeholder files and the build cannot start.
+The package is on Maven Central:
+
+```xml
+<dependency>
+  <groupId>org.aspose</groupId>
+  <artifactId>aspose-words-foss</artifactId>
+  <version>26.3.0</version>
+</dependency>
+```
+
+or, with Gradle, `implementation 'org.aspose:aspose-words-foss:26.3.0'`. Maven and Gradle also fetch the [ten ordinary libraries](#required-runtime-dependencies) it needs. The two modified libraries are already inside this jar. The jar, its sources and javadoc jars, their signatures and a `SHA256SUMS` file are also attached to each [Release](../../releases).
+
+To build it from source you need a JDK 8 (the build is verified with it) and `git` with [Git LFS](https://git-lfs.com). The repository keeps its binary files in Git LFS: the bundled Apache Ant, the two patched jars, a font and textures. Without Git LFS a clone gets placeholder files and the build cannot start.
 
 ```bash
 git clone https://github.com/aspose-words-foss/Aspose.Words-FOSS-for-Java.git
@@ -96,7 +108,9 @@ libs-internal-tools/ant/bin/ant -f words-java.foss.build.xml -Djdk.home=/path/to
 
 On Windows run `libs-internal-tools\ant\bin\ant.bat` instead. The build first downloads the third-party libraries it needs from Maven Central into `libs/` (and checks their SHA-256 sums), then compiles everything into one jar: `lib/aspose-words-foss.jar`. The package is `com.aspose.words`, the same as in the commercial product, so existing Aspose.Words for Java code compiles against it as is.
 
-Put the jar and its [runtime dependencies](#required-runtime-dependencies) on your class path.
+If you built the jar with Ant, put it and its [runtime dependencies](#required-runtime-dependencies) on your class path. The jar from Maven Central needs no extra step: your build tool resolves the ordinary libraries.
+
+The "Source code (zip)" and "Source code (tar.gz)" archives that GitHub offers on the Release page do not contain Git LFS files, so they cannot be built: the build stops at once with "The bundled jars are Git-LFS pointer text". Use the Maven Central or Release jar, or clone the repository with Git LFS.
 
 ## Dependencies
 
@@ -106,6 +120,8 @@ Two libraries in [`ms/lib`](ms/lib), modified by Aspose; what was changed and ho
 
 - `woodstox-core-6.5.2-aspose.jar` — Woodstox 6.5.1 (StAX XML parser) with an option to keep white space in attribute values, as .NET does.
 - `bc-fips.jar` — the Bouncy Castle FIPS Java API (bc-fips 2.0.0, bcutil-fips 2.0.3, bcpkix-fips 2.0.7) merged into one jar, used for document encryption and signature verification. **It is not the certified FIPS 140 module.**
+
+The Maven Central jar contains these two libraries, unpacked into it under their original package names; with the Ant build they stay separate jars. Dependency scanners cannot see classes bundled inside a jar, so the jar's manifest lists them in `Bundled-Dependencies`.
 
 From Maven Central, downloaded by the build into `libs/`:
 
